@@ -1,0 +1,602 @@
+package com.commander4j.app;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
+import java.util.Vector;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDesktopPane;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.text.AbstractDocument;
+
+import com.commander4j.db.JDBControl;
+import com.commander4j.db.JDBLanguage;
+import com.commander4j.db.JDBMaterial;
+import com.commander4j.db.JDBMaterialType;
+
+import com.commander4j.db.JDBUom;
+import com.commander4j.sys.Common;
+import com.commander4j.sys.JLaunchMenu;
+import com.commander4j.util.JFixedSizeFilter;
+import com.commander4j.util.JHelp;
+import com.commander4j.util.JUtility;
+import java.awt.Color;
+
+public class JInternalFrameMaterialProperties extends javax.swing.JInternalFrame
+{
+	private static final long serialVersionUID = 1;
+	private JDesktopPane jDesktopPane1;
+	private JComboBox jComboBoxRoundingRule;
+	private JLabel jLabel14;
+	private JComboBox jComboBoxShelfLifeUOM;
+	private JButton jButtonCancel;
+	private JComboBox jComboBoxDefaultBatchStatus;
+	private JLabel jLabel11;
+	private JButton jButtonBatches;
+	private JButton jButtonUOMs;
+	private JButton jButtonLocations;
+	private JSpinner jSpinnerNetWeight;
+	private JSpinner jSpinnerGrossWeight;
+	private JButton jButtonHelp;
+	private JButton jButtonSave;
+	private JTextField jTextFieldDescription;
+	private JTextField jTextFieldMaterial;
+	private JLabel jLabel13;
+	private JLabel jLabel12;
+	private JLabel jLabel4;
+	private JLabel jLabel8;
+	private JSpinner jSpinnerShelfLife;
+	private JComboBox jComboBoxWeightUOM;
+	private JTextField jTextFieldLegacyCode;
+	private JLabel jLabel10;
+	private JLabel jLabel9;
+	private JLabel jLabel2;
+	private JLabel jLabel5;
+	private JLabel jLabel3;
+	private JLabel jLabel1;
+	private JComboBox jComboBoxMaterialType;
+	private JComboBox jComboBoxBaseUOM;
+	private JDBUom uom = new JDBUom(Common.selectedHostID, Common.sessionID);
+	private JDBMaterial material = new JDBMaterial(Common.selectedHostID, Common.sessionID);
+	private JDBMaterialType materialtype = new JDBMaterialType(Common.selectedHostID, Common.sessionID);;
+	private JDBUom baseuom = new JDBUom(Common.selectedHostID, Common.sessionID);
+	private JDBUom weightuom = new JDBUom(Common.selectedHostID, Common.sessionID);
+	private JShelfLifeUom sluom = new JShelfLifeUom();
+	private JShelfLifeRoundingRule slrr = new JShelfLifeRoundingRule();
+	private Vector<JDBUom> uomList = new Vector<JDBUom>();
+	private Vector<JShelfLifeUom> shelfLifeUomList = new Vector<JShelfLifeUom>();
+	private Vector<JShelfLifeRoundingRule> shelfLifeRule = new Vector<JShelfLifeRoundingRule>();
+	private Vector<JDBMaterialType> typeList = new Vector<JDBMaterialType>();
+	private String lmaterial;
+	private SpinnerNumberModel shelflifenumbermodel = new SpinnerNumberModel();
+	private SpinnerNumberModel grossweightnumbermodel = new SpinnerNumberModel((float) 0, null, null, 1);
+	private SpinnerNumberModel netweightnumbermodel = new SpinnerNumberModel((double) 0, null, null, 1);
+	private JLabel lblEquipment;
+	private JTextField jTextFieldEquipmentType;
+	private JDBLanguage lang = new JDBLanguage(Common.selectedHostID, Common.sessionID);
+
+	public JInternalFrameMaterialProperties()
+	{
+		super();
+		uomList.add(new JDBUom("", ""));
+		uomList.addAll(uom.getInternalUoms());
+		typeList.add(new JDBMaterialType(Common.selectedHostID, Common.sessionID));
+		typeList.addAll(materialtype.getMaterialTypes());
+		JShelfLifeUom slu = new JShelfLifeUom();
+		slu.setUom("");
+		slu.setDescription("");
+		shelfLifeUomList.add(slu);
+		shelfLifeUomList.addAll(slu.getShelfLifeUOMs());
+		JShelfLifeRoundingRule slrr1 = new JShelfLifeRoundingRule();
+		slrr1.setRule("");
+		slrr1.setDescription("");
+		shelfLifeRule.add(slrr1);
+		shelfLifeRule.addAll(slrr1.getShelfLifeRoundingRules());
+		initGUI();
+
+		final JHelp help = new JHelp();
+		help.enableHelpOnButton(jButtonHelp, JUtility.getHelpSetIDforModule("FRM_ADMIN_MATERIAL_EDIT"));
+		{
+			lblEquipment = new JLabel();
+			lblEquipment.setText(lang.get("lbl_Material_Equipment_Type"));
+			lblEquipment.setHorizontalAlignment(SwingConstants.TRAILING);
+			lblEquipment.setFont(Common.font_std);
+			lblEquipment.setBounds(0, 361, 133, 21);
+			jDesktopPane1.add(lblEquipment);
+		}
+		{
+			jTextFieldEquipmentType = new JTextField();
+			jTextFieldEquipmentType.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyTyped(KeyEvent e) {
+					jButtonSave.setEnabled(true);
+				}
+			});
+			jTextFieldEquipmentType.setFont(Common.font_std);
+			jTextFieldEquipmentType.setBounds(147, 362, 85, 21);
+			jDesktopPane1.add(jTextFieldEquipmentType);
+		}
+
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				jTextFieldDescription.requestFocus();
+				jTextFieldDescription.setCaretPosition(jTextFieldDescription.getText().length());
+				
+			}
+		});
+	}
+
+	public JInternalFrameMaterialProperties(String mat)
+	{
+		this();
+		lmaterial = mat;
+		jTextFieldMaterial.setText(lmaterial);
+		setTitle(getTitle() + " - " + lmaterial);
+
+		material.setMaterial(lmaterial);
+
+		if (material.isValidMaterial())
+		{
+			material.getMaterialProperties(lmaterial);
+
+			materialtype.setType(material.getMaterialType());
+			materialtype.getMaterialTypeProperties();
+
+			baseuom.setInternalUom(material.getBaseUom());
+			baseuom.getInternalUomProperties();
+
+			weightuom.setInternalUom(material.getWeightUom());
+			weightuom.getInternalUomProperties();
+
+			sluom.getShelfLifeUomProperties(material.getShelfLifeUom());
+			slrr.getShelfLifeRuleProperties(material.getShelfLifeRule());
+
+			jTextFieldDescription.setText(material.getDescription());
+
+			jTextFieldEquipmentType.setText(material.getEquipmentType());
+
+			jSpinnerShelfLife.setValue((Number) material.getShelfLife());
+
+			jSpinnerGrossWeight.setValue((BigDecimal) material.getGrossWeight());
+			jSpinnerNetWeight.setValue((BigDecimal) material.getNetWeight());
+
+			jTextFieldLegacyCode.setText(material.getOldMaterial());
+
+			jComboBoxDefaultBatchStatus.setSelectedItem(material.getDefaultBatchStatus());
+
+			jButtonSave.setEnabled(false);
+		}
+	}
+
+	private void initGUI() {
+		try
+		{
+			this.setPreferredSize(new java.awt.Dimension(422, 483));
+			this.setBounds(0, 0, 429+Common.LFAdjustWidth, 477+Common.LFAdjustHeight);
+			setVisible(true);
+			this.setIconifiable(true);
+			this.setClosable(true);
+			{
+				jDesktopPane1 = new JDesktopPane();
+				jDesktopPane1.setBackground(Color.WHITE);
+				this.getContentPane().add(jDesktopPane1, BorderLayout.CENTER);
+				jDesktopPane1.setPreferredSize(new java.awt.Dimension(447, 385));
+				jDesktopPane1.setLayout(null);
+				{
+					jTextFieldMaterial = new JTextField();
+					jDesktopPane1.add(jTextFieldMaterial);
+					jTextFieldMaterial.setFont(Common.font_std);
+					jTextFieldMaterial.setEditable(false);
+					jTextFieldMaterial.setEnabled(false);
+					jTextFieldMaterial.setBounds(147, 9, 146, 21);
+					jTextFieldMaterial.setDisabledTextColor(Common.color_textdisabled);
+				}
+				{
+					jTextFieldDescription = new JTextField();
+					AbstractDocument doc = (AbstractDocument) jTextFieldDescription.getDocument();
+					doc.setDocumentFilter(new JFixedSizeFilter(80));
+					jDesktopPane1.add(jTextFieldDescription);
+					jTextFieldDescription.setFont(Common.font_std);
+					jTextFieldDescription.setBounds(147, 38, 245, 21);
+					jTextFieldDescription.addKeyListener(new KeyAdapter() {
+						public void keyTyped(KeyEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+				}
+				{
+					jButtonSave = new JButton(Common.icon_save);
+					jDesktopPane1.add(jButtonSave);
+					jButtonSave.setEnabled(false);
+					jButtonSave.setText(lang.get("btn_Save"));
+					jButtonSave.setMnemonic(lang.getMnemonicChar());
+					jButtonSave.setFont(Common.font_btn);
+					jButtonSave.setBounds(35, 391, 112, 28);
+					jButtonSave.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							boolean result = true;
+							// try
+							// {
+							material.setDescription(jTextFieldDescription.getText());
+							material.setMaterialType(((JDBMaterialType) jComboBoxMaterialType.getSelectedItem()).getType());
+							material.setBaseUom(((JDBUom) jComboBoxBaseUOM.getSelectedItem()).getInternalUom());
+
+							material.setShelfLife((Integer) jSpinnerShelfLife.getValue());
+							material.setShelfLifeUom(((JShelfLifeUom) jComboBoxShelfLifeUOM.getSelectedItem()).getUom());
+							material.setShelfLifeRule(((JShelfLifeRoundingRule) jComboBoxRoundingRule.getSelectedItem()).getRule());
+
+							material.setDefaultBatchStatus((String) jComboBoxDefaultBatchStatus.getSelectedItem());
+
+							BigDecimal bd = new BigDecimal(0).setScale(3, BigDecimal.ROUND_HALF_UP);
+							bd = BigDecimal.valueOf(grossweightnumbermodel.getNumber().doubleValue()).setScale(3, BigDecimal.ROUND_HALF_UP);
+							material.setGrossWeight(bd);
+							bd = BigDecimal.valueOf(netweightnumbermodel.getNumber().doubleValue()).setScale(3, BigDecimal.ROUND_HALF_UP);
+							material.setNetWeight(bd);
+
+							try
+							{
+								material.setWeightUom(((JDBUom) jComboBoxWeightUOM.getSelectedItem()).getInternalUom());
+							}
+							catch (Exception e)
+							{
+								material.setWeightUom("");
+							}
+
+							material.setOldMaterial(jTextFieldLegacyCode.getText());
+
+							material.setEquipmentType(jTextFieldEquipmentType.getText());
+
+							if (material.isValidMaterial() == false)
+							{
+								result = material.create();
+							}
+							else
+							{
+								result = material.update();
+							}
+							if (result == false)
+							{
+								JOptionPane.showMessageDialog(Common.mainForm, material.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);
+							}
+							else
+							{
+								jButtonSave.setEnabled(false);
+							}
+
+						}
+					});
+				}
+				{
+					jButtonHelp = new JButton(Common.icon_help);
+					jDesktopPane1.add(jButtonHelp);
+					jButtonHelp.setText(lang.get("btn_Help"));
+					jButtonHelp.setMnemonic(lang.getMnemonicChar());
+					jButtonHelp.setFont(Common.font_btn);
+					jButtonHelp.setBounds(147, 391, 112, 28);
+				}
+				{
+					jButtonCancel = new JButton(Common.icon_close);
+					jDesktopPane1.add(jButtonCancel);
+					jButtonCancel.setText(lang.get("btn_Close"));
+					jButtonCancel.setMnemonic(lang.getMnemonicChar());
+					jButtonCancel.setFont(Common.font_btn);
+					jButtonCancel.setBounds(259, 391, 112, 28);
+					jButtonCancel.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							dispose();
+						}
+					});
+				}
+				{
+					ComboBoxModel jComboBoxBaseUOMModel = new DefaultComboBoxModel(uomList);
+					jComboBoxBaseUOM = new JComboBox();
+					jDesktopPane1.add(jComboBoxBaseUOM);
+					jComboBoxBaseUOM.setModel(jComboBoxBaseUOMModel);
+					jComboBoxBaseUOM.setMaximumRowCount(12);
+					jComboBoxBaseUOM.setFont(Common.font_combo);
+					jComboBoxBaseUOM.setBounds(147, 97, 248, 23);
+					jComboBoxBaseUOM.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+
+					jComboBoxBaseUOMModel.setSelectedItem(baseuom);
+
+				}
+				{
+					ComboBoxModel jComboBoxMaterialTypeModel = new DefaultComboBoxModel(typeList);
+					jComboBoxMaterialType = new JComboBox();
+					jDesktopPane1.add(jComboBoxMaterialType);
+					jComboBoxMaterialType.setModel(jComboBoxMaterialTypeModel);
+					jComboBoxMaterialType.setFont(Common.font_combo);
+					jComboBoxMaterialType.setBounds(147, 68, 248, 23);
+					jComboBoxMaterialType.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+
+					jComboBoxMaterialTypeModel.setSelectedItem(materialtype);
+				}
+				{
+					jLabel12 = new JLabel();
+					jDesktopPane1.add(jLabel12);
+					jLabel12.setText(lang.get("lbl_Material_Default_Batch_Status"));
+					jLabel12.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel12.setFont(Common.font_std);
+					jLabel12.setBounds(0, 332, 133, 21);
+				}
+				{
+					jLabel13 = new JLabel();
+					jDesktopPane1.add(jLabel13);
+					jLabel13.setText(lang.get("lbl_Material_Shelf_Life_UOM"));
+					jLabel13.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel13.setFont(Common.font_std);
+					jLabel13.setBounds(0, 155, 133, 21);
+				}
+				{
+					ComboBoxModel jComboBoxShelfLifeUOMModel = new DefaultComboBoxModel(shelfLifeUomList);
+					jComboBoxShelfLifeUOM = new JComboBox();
+					jDesktopPane1.add(jComboBoxShelfLifeUOM);
+					jComboBoxShelfLifeUOM.setModel(jComboBoxShelfLifeUOMModel);
+					jComboBoxShelfLifeUOM.setMaximumRowCount(12);
+					jComboBoxShelfLifeUOM.setFont(Common.font_combo);
+					jComboBoxShelfLifeUOM.setBounds(147, 156, 125, 21);
+					jComboBoxShelfLifeUOM.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+
+					jComboBoxShelfLifeUOMModel.setSelectedItem(sluom);
+				}
+				{
+					jLabel14 = new JLabel();
+					jDesktopPane1.add(jLabel14);
+					jLabel14.setText(lang.get("lbl_Material_Shelf_Life_Rounding_Rule"));
+					jLabel14.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel14.setFont(Common.font_std);
+					jLabel14.setBounds(0, 184, 133, 21);
+				}
+				{
+					ComboBoxModel jComboBoxRoundingRuleModel = new DefaultComboBoxModel(shelfLifeRule);
+					jComboBoxRoundingRule = new JComboBox();
+					jDesktopPane1.add(jComboBoxRoundingRule);
+					jComboBoxRoundingRule.setModel(jComboBoxRoundingRuleModel);
+					jComboBoxRoundingRule.setFont(Common.font_combo);
+					jComboBoxRoundingRule.setBounds(147, 185, 125, 21);
+					jComboBoxRoundingRule.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+
+					jComboBoxRoundingRuleModel.setSelectedItem(slrr);
+				}
+				{
+					jLabel1 = new JLabel();
+					jDesktopPane1.add(jLabel1);
+					jLabel1.setText(lang.get("lbl_Material"));
+					jLabel1.setFont(Common.font_std);
+					jLabel1.setBounds(0, 8, 133, 21);
+					jLabel1.setHorizontalAlignment(SwingConstants.TRAILING);
+				}
+				{
+					jLabel3 = new JLabel();
+					jDesktopPane1.add(jLabel3);
+					jLabel3.setText(lang.get("lbl_Description"));
+					jLabel3.setFont(Common.font_std);
+					jLabel3.setBounds(0, 38, 133, 21);
+					jLabel3.setHorizontalAlignment(SwingConstants.TRAILING);
+				}
+				{
+					jLabel5 = new JLabel();
+					jDesktopPane1.add(jLabel5);
+					jLabel5.setText(lang.get("lbl_Material_Base_UOM"));
+					jLabel5.setFont(Common.font_std);
+					jLabel5.setBounds(0, 96, 133, 21);
+					jLabel5.setHorizontalAlignment(SwingConstants.TRAILING);
+				}
+				{
+					jLabel2 = new JLabel();
+					jDesktopPane1.add(jLabel2);
+					jLabel2.setText(lang.get("lbl_Material_Type"));
+					jLabel2.setFont(Common.font_std);
+					jLabel2.setBounds(0, 67, 133, 21);
+					jLabel2.setHorizontalAlignment(SwingConstants.TRAILING);
+				}
+				{
+					jLabel4 = new JLabel();
+					jDesktopPane1.add(jLabel4);
+					jLabel4.setText(lang.get("lbl_Material_Shelf_Life"));
+					jLabel4.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel4.setFont(Common.font_std);
+					jLabel4.setBounds(0, 126, 133, 21);
+				}
+				{
+					jLabel8 = new JLabel();
+					jDesktopPane1.add(jLabel8);
+					jLabel8.setText(lang.get("lbl_Material_Gross_Weight"));
+					jLabel8.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel8.setFont(Common.font_std);
+					jLabel8.setBounds(0, 214, 133, 21);
+					jLabel8.setFocusTraversalPolicyProvider(true);
+				}
+				{
+					jLabel9 = new JLabel();
+					jDesktopPane1.add(jLabel9);
+					jLabel9.setText(lang.get("lbl_Material_Net_Weight"));
+					jLabel9.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel9.setFont(Common.font_std);
+					jLabel9.setBounds(0, 244, 133, 21);
+				}
+				{
+					jLabel10 = new JLabel();
+					jDesktopPane1.add(jLabel10);
+					jLabel10.setText(lang.get("lbl_Material_Weight_UOM"));
+					jLabel10.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel10.setFont(Common.font_std);
+					jLabel10.setBounds(0, 273, 133, 21);
+				}
+				{
+					jTextFieldLegacyCode = new JTextField();
+					AbstractDocument doc = (AbstractDocument) jTextFieldLegacyCode.getDocument();
+					doc.setDocumentFilter(new JFixedSizeFilter(20));
+					jDesktopPane1.add(jTextFieldLegacyCode);
+					jTextFieldLegacyCode.setFont(Common.font_std);
+					jTextFieldLegacyCode.setBounds(147, 303, 125, 21);
+					jTextFieldLegacyCode.addKeyListener(new KeyAdapter() {
+						public void keyTyped(KeyEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+				}
+				{
+					ComboBoxModel jComboBox1Model = new DefaultComboBoxModel(uomList);
+					jComboBoxWeightUOM = new JComboBox();
+					jDesktopPane1.add(jComboBoxWeightUOM);
+					jComboBoxWeightUOM.setModel(jComboBox1Model);
+					jComboBoxWeightUOM.setFont(Common.font_combo);
+					jComboBoxWeightUOM.setBounds(147, 274, 248, 23);
+					jComboBoxWeightUOM.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+					jComboBox1Model.setSelectedItem(weightuom);
+				}
+				{
+					jSpinnerShelfLife = new JSpinner();
+					jDesktopPane1.add(jSpinnerShelfLife);
+					jSpinnerShelfLife.setModel(shelflifenumbermodel);
+					jSpinnerShelfLife.setBounds(147, 126, 60, 21);
+					jSpinnerShelfLife.getEditor().setPreferredSize(new java.awt.Dimension(42, 17));
+					jSpinnerShelfLife.setFont(Common.font_std);
+					jSpinnerShelfLife.addChangeListener(new ChangeListener() {
+						public void stateChanged(ChangeEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+				}
+				{
+					jSpinnerGrossWeight = new JSpinner();
+
+					jDesktopPane1.add(jSpinnerGrossWeight);
+					jSpinnerGrossWeight.setModel(grossweightnumbermodel);
+					jSpinnerGrossWeight.setFont(Common.font_std);
+					jSpinnerGrossWeight.setBounds(147, 214, 95, 21);
+
+					jSpinnerGrossWeight.getEditor().setPreferredSize(new java.awt.Dimension(42, 17));
+					jSpinnerGrossWeight.addChangeListener(new ChangeListener() {
+						public void stateChanged(ChangeEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+				}
+				{
+					jSpinnerNetWeight = new JSpinner();
+					jDesktopPane1.add(jSpinnerNetWeight);
+					jSpinnerNetWeight.setModel(netweightnumbermodel);
+					jSpinnerNetWeight.setFont(Common.font_std);
+					jSpinnerNetWeight.setBounds(147, 244, 95, 21);
+					jSpinnerNetWeight.addChangeListener(new ChangeListener() {
+						public void stateChanged(ChangeEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+				}
+				{
+					jButtonUOMs = new JButton();
+					jDesktopPane1.add(jButtonUOMs);
+					jButtonUOMs.setText(lang.get("btn_Material_UOM_Conversions"));
+					jButtonUOMs.setBounds(255, 240, 140, 25);
+					jButtonUOMs.setFont(Common.font_btn);
+					jButtonUOMs.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_UOM"));
+					jButtonUOMs.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							String base = ((JDBUom) jComboBoxBaseUOM.getSelectedItem()).getInternalUom();
+							JLaunchMenu.runForm("FRM_ADMIN_MATERIAL_UOM", lmaterial, base);
+						}
+					});
+				}
+				{
+					JDBControl ctrl = new JDBControl(Common.selectedHostID, Common.sessionID);
+					String value = ctrl.getKeyValue("SSCC_LOCATION_VALIDATION");
+					Boolean enabled = Boolean.valueOf(value);
+					jButtonLocations = new JButton();
+					jDesktopPane1.add(jButtonLocations);
+					jButtonLocations.setText(lang.get("btn_Material_Locations"));
+					jButtonLocations.setEnabled(enabled);
+					jButtonLocations.setBounds(220, 124, 175, 25);
+					jButtonLocations.setFont(Common.font_btn);
+					if (enabled)
+					{
+						jButtonLocations.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_LOCATION"));
+					}
+					jButtonLocations.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+
+							JLaunchMenu.runForm("FRM_ADMIN_MATERIAL_LOCATION", lmaterial);
+						}
+					});
+					
+				}
+				{
+					// Icon iconBatches =
+					// Common.imageIconloader.getImage(Common.);
+					jButtonBatches = new JButton();
+					jDesktopPane1.add(jButtonBatches);
+					jButtonBatches.setText(lang.get("btn_Material_Batches"));
+					jButtonBatches.setFont(Common.font_btn);
+					jButtonBatches.setBounds(255, 210, 140, 25);
+					jButtonBatches.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_BATCH"));
+					jButtonBatches.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							JLaunchMenu.runForm("FRM_ADMIN_MATERIAL_BATCH", lmaterial);
+						}
+					});
+				}
+				{
+					jLabel11 = new JLabel();
+					jDesktopPane1.add(jLabel11);
+					jLabel11.setText(lang.get("lbl_Material_Legacy_Code"));
+					jLabel11.setHorizontalAlignment(SwingConstants.TRAILING);
+					jLabel11.setFont(Common.font_std);
+					jLabel11.setBounds(0, 302, 133, 21);
+				}
+				{
+					ComboBoxModel jComboBoxDefaultBatchStatusModel = new DefaultComboBoxModel(Common.batchStatusIncBlank);
+					jComboBoxDefaultBatchStatus = new JComboBox();
+					jDesktopPane1.add(jComboBoxDefaultBatchStatus);
+					jComboBoxDefaultBatchStatus.setFont(Common.font_combo);
+					jComboBoxDefaultBatchStatus.setModel(jComboBoxDefaultBatchStatusModel);
+					jComboBoxDefaultBatchStatus.setBounds(148, 332, 126, 23);
+					jComboBoxDefaultBatchStatus.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							jButtonSave.setEnabled(true);
+						}
+					});
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+}

@@ -1,0 +1,1173 @@
+package com.commander4j.app;
+
+import com.commander4j.db.JDBDespatch;
+import com.commander4j.db.JDBPallet;
+import com.commander4j.db.JDBQuery;
+import com.commander4j.db.JDBLanguage;
+import com.commander4j.sys.Common;
+import com.commander4j.sys.JLaunchLookup;
+import com.commander4j.sys.JLaunchReport;
+import com.commander4j.util.JHelp;
+import com.commander4j.util.JUtility;
+import java.awt.Color;
+import java.awt.ComponentOrientation;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.PreparedStatement;
+import java.text.DateFormat;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
+import javax.swing.border.BevelBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.Font;
+import javax.swing.Icon;
+
+public class JInternalFrameDespatch extends JInternalFrame
+{
+	private static final long serialVersionUID = 1;
+	private JButton jButtonLookupHaulier;
+	private JButton jButtonLookupTrailer;
+	private JTextField textFieldHaulier;
+	private JTextField textFieldTrailer;
+	private ButtonGroup buttonGroup_1 = new ButtonGroup();
+	private JButton jButtonLookupBatch;
+	private JButton jButtonLookupMaterial;
+	private JButton jButtonLookupLocationTo;
+	private JButton jButtonLookupLocationFrom;
+	private JButton jButtonLookupLoadNo;
+	private JTextField jTextFieldDespatchDate;
+	private JTextField textFieldNoOfPallets;
+	private JTextField textFieldDespatchLocationTo;
+	private JTextField textFieldDespatchStatus;
+	private JTextField textFieldDespatchLocationFrom;
+	private JLabel jLabel10_1;
+	private JSpinner spinnerUnassignedLimit;
+	private JCheckBox jCheckBoxLimit;
+	private JLabel jLabel10;
+	private JTextField textFieldBatch;
+	private JTextField textFieldMaterial;
+	private JTextField textFieldSSCC;
+	private JComboBox comboBoxPalletStatus;
+	private JList list_assigned;
+	private JList list_unassigned;
+	private JList list_despatch;
+	private JSpinner spinnerDespatchLimit = new JSpinner();
+	private JDBDespatch despatch = new JDBDespatch(Common.selectedHostID, Common.sessionID);
+	private JDBLanguage lang = new JDBLanguage(Common.selectedHostID, Common.sessionID);
+	private JButton confirmButton = new JButton(Common.icon_ok);
+	private JButton deleteButton = new JButton(Common.icon_save);
+	private JButton buttonUnAssign = new JButton(Common.icon_arrow_right);
+	private JButton buttonAssign = new JButton(Common.icon_arrow_left);
+	private String currentdespatchno = "";
+	private String previousdespatchno = "";
+	private LinkedList<JDBDespatch> despList = new LinkedList<JDBDespatch>();
+	private LinkedList<String> unassignedList = new LinkedList<String>();
+	private LinkedList<String> assignedList = new LinkedList<String>();
+	private JRadioButton confirmedRadioButton = new JRadioButton();
+	private JRadioButton unconfirmedRadioButton = new JRadioButton();
+	private JButton findButton = new JButton(Common.icon_find);
+	private JButton jButtonHelp = new JButton(Common.icon_help);
+	private JButton newButton = new JButton(Common.icon_add);
+	private JLabel jStatusText;
+	private JTextField textFieldLoadNo;
+	private JTextField textFieldUserID;
+	private JButton buttonSetUserID;
+	private JTextField textFieldDespatchNo;
+
+	public JInternalFrameDespatch() {
+		super();
+		setIconifiable(true);
+		setClosable(true);
+		setTitle("Despatch");
+		setVisible(true);
+		getContentPane().setLayout(null);
+		setBounds(100, 100, 856+Common.LFAdjustWidth, 497+Common.LFAdjustHeight);
+
+		final JDesktopPane desktopPane = new JDesktopPane();
+		desktopPane.setBackground(Color.WHITE);
+		desktopPane.setBounds(0, 0, 833, 453);
+		getContentPane().add(desktopPane);
+		desktopPane.setLayout(null);
+
+		final JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(10, 30, 150, 255);
+		desktopPane.add(scrollPane);
+
+		list_despatch = new JList();
+		list_despatch.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if (list_despatch.getModel().getSize() > 0) {
+					if (list_despatch.getSelectedIndex() >= 0) {
+						JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+						currentdespatchno = d.getDespatchNo();
+
+						if (currentdespatchno.equals(previousdespatchno) == false) {
+							previousdespatchno = currentdespatchno;
+							textFieldDespatchLocationFrom.setText(d.getLocationIDFrom());
+							textFieldDespatchLocationTo.setText(d.getLocationIDTo());
+							textFieldDespatchStatus.setText(d.getStatus());
+
+							// textFieldTrailer.setText(d.);
+							if (d.getStatus().equals("Confirmed")) {
+								// confirmButton.setEnabled(false);
+								deleteButton.setEnabled(false);
+								jButtonLookupLocationTo.setEnabled(false);
+								jButtonLookupLocationFrom.setEnabled(false);
+								buttonSetUserID.setEnabled(false);
+								jButtonLookupLoadNo.setEnabled(false);
+								jButtonLookupTrailer.setEnabled(false);
+								jButtonLookupHaulier.setEnabled(false);
+								buttonUnAssign.setEnabled(false);
+								buttonAssign.setEnabled(false);
+								newButton.setEnabled(false);
+							}
+							else {
+								deleteButton.setEnabled(true);
+								jButtonLookupLocationFrom.setEnabled(true);
+								buttonSetUserID.setEnabled(true);
+								jButtonLookupLocationTo.setEnabled(true);
+								jButtonLookupLoadNo.setEnabled(true);
+								jButtonLookupTrailer.setEnabled(true);
+								jButtonLookupHaulier.setEnabled(true);
+								buttonUnAssign.setEnabled(true);
+								buttonAssign.setEnabled(true);
+								newButton.setEnabled(true);
+							}
+
+							try {
+								jTextFieldDespatchDate.setText(DateFormat.getDateTimeInstance().format(d.getDespatchDate()));
+							}
+							catch (Exception ee) {
+								jTextFieldDespatchDate.setText("N/A");
+							}
+
+							textFieldHaulier.setText(d.getHaulier());
+							textFieldTrailer.setText(d.getTrailer());
+							textFieldLoadNo.setText(d.getLoadNo());
+							textFieldUserID.setText(d.getUserID());
+
+							textFieldNoOfPallets.setText(Integer.toString(d.getTotalPallets()));
+							setConfirmButtonStatus();
+							setFindButtonStatus(d.getLocationIDFrom());
+
+							populateAssignedList(d.getDespatchNo(), "");
+							clearUnAssignedList();
+						}
+					}
+					else {
+						blankDespatchFields();
+					}
+				}
+				else {
+					jButtonLookupLocationFrom.setEnabled(false);
+					buttonSetUserID.setEnabled(false);
+					jButtonLookupLocationTo.setEnabled(false);
+					jButtonLookupTrailer.setEnabled(false);
+					jButtonLookupHaulier.setEnabled(false);
+					buttonUnAssign.setEnabled(false);
+					buttonAssign.setEnabled(false);
+					populateAssignedList("", "");
+				}
+			}
+		});
+		list_despatch.setCellRenderer(Common.renderer_list);
+		list_despatch.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		scrollPane.setViewportView(list_despatch);
+
+		final JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(510, 30, 150, 345);
+		desktopPane.add(scrollPane_1);
+
+		list_unassigned = new JList();
+		list_unassigned.setLocation(0, -3);
+		list_unassigned.setCellRenderer(Common.renderer_list_unassigned);
+		list_unassigned.setBackground(Common.color_list_unassigned);
+		scrollPane_1.setViewportView(list_unassigned);
+
+		final JScrollPane scrollPane_2 = new JScrollPane();
+		scrollPane_2.setBounds(310, 30, 150, 345);
+		desktopPane.add(scrollPane_2);
+
+		list_assigned = new JList();
+		list_assigned.setCellRenderer(Common.renderer_list_assigned);
+		list_assigned.setBackground(Common.color_list_assigned);
+		scrollPane_2.setViewportView(list_assigned);
+
+		comboBoxPalletStatus = new JComboBox();
+
+		comboBoxPalletStatus.setFont(Common.font_std);
+		comboBoxPalletStatus.setBounds(672, 135, 143, 21);
+
+		ComboBoxModel jComboBoxDefaultPalletStatusModel = new DefaultComboBoxModel(Common.palletStatusIncBlank);
+		comboBoxPalletStatus.setModel(jComboBoxDefaultPalletStatusModel);
+		comboBoxPalletStatus.setSelectedIndex(0);
+		desktopPane.add(comboBoxPalletStatus);
+
+		textFieldSSCC = new JTextField();
+		textFieldSSCC.setFont(Common.font_std);
+		textFieldSSCC.setBounds(672, 50, 143, 21);
+		desktopPane.add(textFieldSSCC);
+
+		final JLabel palletStatusLabel = new JLabel();
+		palletStatusLabel.setText(lang.get("lbl_Pallet_Status"));
+		palletStatusLabel.setFont(Common.font_std);
+		palletStatusLabel.setBounds(672, 115, 128, 20);
+		desktopPane.add(palletStatusLabel);
+
+		final JLabel ssccLabel = new JLabel();
+		ssccLabel.setText(lang.get("lbl_Pallet_SSCC"));
+		ssccLabel.setFont(Common.font_std);
+		ssccLabel.setBounds(672, 35, 128, 16);
+		desktopPane.add(ssccLabel);
+
+		textFieldMaterial = new JTextField();
+		textFieldMaterial.setFont(Common.font_std);
+		textFieldMaterial.setBounds(672, 90, 124, 21);
+		desktopPane.add(textFieldMaterial);
+
+		final JLabel materialLabel = new JLabel();
+		materialLabel.setText(lang.get("lbl_Material"));
+		materialLabel.setFont(Common.font_std);
+		materialLabel.setBounds(672, 75, 128, 16);
+		desktopPane.add(materialLabel);
+
+		textFieldBatch = new JTextField();
+		textFieldBatch.setFont(Common.font_std);
+		textFieldBatch.setBounds(672, 175, 124, 21);
+		desktopPane.add(textFieldBatch);
+
+		final JLabel batchLabel = new JLabel();
+		batchLabel.setText(lang.get("lbl_Batch"));
+		batchLabel.setFont(Common.font_std);
+		batchLabel.setBounds(672, 160, 128, 16);
+		desktopPane.add(batchLabel);
+		buttonAssign.setEnabled(false);
+
+		buttonAssign.setBounds(470, 150, 25, 25);
+		buttonAssign.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (textFieldDespatchLocationTo.getText().equals("")) {
+					jStatusText.setText("Please define Destination Location");
+				}
+				else {
+					jStatusText.setText("");
+					if (list_unassigned.getSelectedIndex() > -1) {
+						String item = "";
+						JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+
+						for (int j = list_unassigned.getMaxSelectionIndex(); j >= list_unassigned.getMinSelectionIndex(); j--) {
+							if (list_unassigned.isSelectedIndex(j)) {
+								item = (String) list_unassigned.getModel().getElementAt(j);
+
+								if (d.assignSSCC(item)) {
+									addtoList(assignedList, item);
+									removefromList(unassignedList, item);
+									jStatusText.setText("");
+								}
+								else {
+									jStatusText.setText(d.getErrorMessage());
+								}
+							}
+						}
+
+						list_assigned.setModel(addListtoModel(assignedList));
+						list_unassigned.setModel(addListtoModel(unassignedList));
+						textFieldNoOfPallets.setText(String.valueOf(assignedList.size()));
+
+						d.setTotalPallets(assignedList.size());
+						updateDespatch(d);
+					}
+				}
+			}
+		});
+		desktopPane.add(buttonAssign);
+		buttonUnAssign.setEnabled(false);
+
+		buttonUnAssign.setBounds(470, 185, 25, 25);
+		buttonUnAssign.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (list_assigned.getSelectedIndex() > -1) {
+					String item = "";
+					JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+
+					for (int j = list_assigned.getMaxSelectionIndex(); j >= list_assigned.getMinSelectionIndex(); j--) {
+						if (list_assigned.isSelectedIndex(j)) {
+							item = (String) list_assigned.getModel().getElementAt(j);
+
+							if (d.unassignSSCC(item)) {
+								removefromList(assignedList, item);
+								addtoList(unassignedList, item);
+							}
+						}
+					}
+
+					list_assigned.setModel(addListtoModel(assignedList));
+					list_unassigned.setModel(addListtoModel(unassignedList));
+					textFieldNoOfPallets.setText(String.valueOf(assignedList.size()));
+
+					d.setTotalPallets(assignedList.size());
+					updateDespatch(d);
+				}
+			}
+		});
+		desktopPane.add(buttonUnAssign);
+
+		newButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int question = JOptionPane.showConfirmDialog(Common.mainForm, lang.get("dlg_Despatch_Create"), lang.get("dlg_Confirm"), JOptionPane.YES_NO_OPTION);
+
+				if (question == 0) {
+					JDBDespatch d = new JDBDespatch(Common.selectedHostID, Common.sessionID);
+					String number = "";
+					number = d.generateNewDespatchNo();
+
+					if (number.equals("") == false) {
+
+						if (d.create()) {
+							d.updateUserID(number, Common.userList.getUser(Common.sessionID).getUserId());
+							populateDespatchList(number);
+							setConfirmButtonStatus();
+						}
+						else {
+							JUtility.errorBeep();
+							JOptionPane.showMessageDialog(Common.mainForm, d.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);
+						}
+					}
+					else
+					{
+						JUtility.errorBeep();
+						JOptionPane.showMessageDialog(Common.mainForm, d.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);						
+					}
+				}
+			}
+		});
+		newButton.setText(lang.get("btn_New"));
+		newButton.setFont(Common.font_btn);
+		newButton.setBounds(2, 388, 116, 30);
+		desktopPane.add(newButton);
+
+		deleteButton.setText(lang.get("btn_Delete"));
+		deleteButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (list_despatch.getModel().getSize() > 0) {
+					if (list_despatch.getSelectedIndex() >= 0) {
+						JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+
+						int question = JOptionPane.showConfirmDialog(Common.mainForm, lang.get("dlg_Despatch_Delete") + " " + d.getDespatchNo() + " ?", lang.get("dlg_Confirm"), JOptionPane.YES_NO_OPTION);
+
+						if (question == 0) {
+							d.delete();
+							populateDespatchList("");
+							setConfirmButtonStatus();
+						}
+					}
+				}
+			}
+		});
+		deleteButton.setFont(Common.font_btn);
+		deleteButton.setBounds(238, 388, 116, 30);
+		desktopPane.add(deleteButton);
+
+		findButton.setText(lang.get("btn_Find"));
+		findButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				populateUnassignedList(buildUnassignedSQL(), "");
+			}
+		});
+		findButton.setFont(Common.font_btn);
+		findButton.setBounds(672, 298, 143, 30);
+		desktopPane.add(findButton);
+
+		final JButton printButton = new JButton(Common.icon_report);
+		printButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (list_despatch.getModel().getSize() > 0) {
+					if (list_despatch.getSelectedIndex() >= 0) {
+						JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+						HashMap<String, Object> parameters = new HashMap<String, Object>();
+						parameters.put("p_despatch_no", d.getDespatchNo());
+						JLaunchReport.runReport("RPT_DESPATCH", parameters, "",null,"");
+					}
+				}
+			}
+		});
+		printButton.setText(lang.get("btn_Print"));
+		printButton.setFont(Common.font_btn);
+		printButton.setBounds(474, 388, 116, 30);
+		desktopPane.add(printButton);
+
+		jLabel10 = new JLabel();
+		jLabel10.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+		jLabel10.setHorizontalAlignment(SwingConstants.TRAILING);
+		jLabel10.setFont(Common.font_std);
+		jLabel10.setText(lang.get("lbl_Limit"));
+		jLabel10.setBounds(672, 244, 128, 21);
+		desktopPane.add(jLabel10);
+
+		jCheckBoxLimit = new JCheckBox();
+		jCheckBoxLimit.setFont(Common.font_std);
+		jCheckBoxLimit.setSelected(true);
+		jCheckBoxLimit.setBackground(new Color(255, 255, 255));
+		jCheckBoxLimit.setText("New JCheckBox");
+		jCheckBoxLimit.setBounds(672, 264, 21, 21);
+		desktopPane.add(jCheckBoxLimit);
+
+		spinnerUnassignedLimit = new JSpinner();
+		spinnerUnassignedLimit.setFont(Common.font_std);
+		spinnerUnassignedLimit.setBounds(701, 264, 114, 20);
+		spinnerUnassignedLimit.setValue(1000);
+		desktopPane.add(spinnerUnassignedLimit);
+
+		final JButton closeButton = new JButton(Common.icon_close);
+
+		closeButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}
+		});
+		closeButton.setText(lang.get("btn_Close"));
+		closeButton.setMnemonic(lang.getMnemonicChar());
+		closeButton.setFont(Common.font_btn);
+		closeButton.setBounds(710, 388, 116, 30);
+		desktopPane.add(closeButton);
+
+		jButtonHelp.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		jButtonHelp.setText(lang.get("btn_Help"));
+		jButtonHelp.setFont(Common.font_btn);
+		jButtonHelp.setBounds(592, 388, 116, 30);
+		desktopPane.add(jButtonHelp);
+
+		//
+		final JHelp help = new JHelp();
+		help.enableHelpOnButton(jButtonHelp, JUtility.getHelpSetIDforModule("FRM_ADMIN_DESPATCH"));
+
+		confirmButton.setText(lang.get("btn_Confirm"));
+		confirmButton.setEnabled(false);
+		confirmButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (list_despatch.getModel().getSize() > 0) {
+					if (list_despatch.getSelectedIndex() >= 0) {
+						JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+
+						int n = JOptionPane.showConfirmDialog(Common.mainForm, lang.get("dlg_Despatch_Confirm") + " " + d.getDespatchNo() + " ?", lang.get("dlg_Confirm"), JOptionPane.YES_NO_OPTION);
+
+						if (n == 0) {
+							d.getDespatchProperties();
+							if (d.confirm()) {
+								populateDespatchList("");
+								setConfirmButtonStatus();
+							}
+							else {
+								JUtility.errorBeep();
+								JOptionPane.showMessageDialog(Common.mainForm, d.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);
+								populateDespatchList("");
+							}
+						}
+					}
+				}
+			}
+		});
+		confirmButton.setFont(Common.font_btn);
+		confirmButton.setBounds(356, 388, 116, 30);
+		desktopPane.add(confirmButton);
+
+		final JLabel despatchesLabel = new JLabel();
+		despatchesLabel.setText(lang.get("lbl_Despatches"));
+		despatchesLabel.setFont(Common.font_title);
+		despatchesLabel.setBounds(10, 10, 75, 16);
+		desktopPane.add(despatchesLabel);
+
+		final JLabel unassignedLabel = new JLabel();
+		unassignedLabel.setText(lang.get("lbl_Unassigned"));
+		unassignedLabel.setFont(Common.font_title);
+		unassignedLabel.setBounds(510, 10, 150, 16);
+		desktopPane.add(unassignedLabel);
+
+		final JLabel assignedLabel = new JLabel();
+		assignedLabel.setText(lang.get("lbl_Assigned"));
+		assignedLabel.setFont(Common.font_title);
+		assignedLabel.setBounds(310, 10, 150, 16);
+		desktopPane.add(assignedLabel);
+
+		final JLabel palletFilterCriteriaLabel = new JLabel();
+		palletFilterCriteriaLabel.setText(lang.get("lbl_Unassigned_Filter"));
+		palletFilterCriteriaLabel.setFont(Common.font_title);
+		palletFilterCriteriaLabel.setBounds(672, 15, 125, 16);
+		desktopPane.add(palletFilterCriteriaLabel);
+
+		final JButton refreshButton = new JButton(Common.icon_refresh);
+		refreshButton.setFont(Common.font_btn);
+		refreshButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (list_despatch.getModel().getSize() > 0) {
+					if (list_despatch.getSelectedIndex() >= 0) {
+						JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+						previousdespatchno = "";
+						populateDespatchList(d.getDespatchNo());
+					}
+				}
+			}
+		});
+		refreshButton.setText(lang.get("btn_Refresh"));
+		refreshButton.setBounds(120, 388, 116, 30);
+		desktopPane.add(refreshButton);
+
+		SpinnerNumberModel jSpinnerIntModel = new SpinnerNumberModel();
+		jSpinnerIntModel.setMinimum(1);
+		jSpinnerIntModel.setMaximum(50000);
+		jSpinnerIntModel.setStepSize(1);
+		spinnerDespatchLimit.setModel(jSpinnerIntModel);
+		spinnerDespatchLimit.setBounds(100, 303, 60, 20);
+		spinnerDespatchLimit.setValue(50);
+		desktopPane.add(spinnerDespatchLimit);
+
+		jLabel10_1 = new JLabel();
+		jLabel10_1.setHorizontalAlignment(SwingConstants.TRAILING);
+		jLabel10_1.setFont(Common.font_std);
+		jLabel10_1.setText(lang.get("lbl_Limit"));
+		jLabel10_1.setBounds(15, 302, 70, 21);
+		desktopPane.add(jLabel10_1);
+
+		textFieldDespatchLocationFrom = new JTextField();
+		textFieldDespatchLocationFrom.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (JUtility.isNullORBlank(textFieldDespatchLocationFrom.getText()) == true) {
+					findButton.setEnabled(false);
+				}
+				else {
+					findButton.setEnabled(true);
+				}
+			}
+		});
+		textFieldDespatchLocationFrom.setEditable(false);
+		textFieldDespatchLocationFrom.setFont(Common.font_std);
+		textFieldDespatchLocationFrom.setBounds(172, 51, 105, 20);
+		textFieldDespatchLocationFrom.setDisabledTextColor(Common.color_textdisabled);
+		desktopPane.add(textFieldDespatchLocationFrom);
+
+		final JLabel locationLabel_1 = new JLabel();
+		locationLabel_1.setFont(Common.font_std);
+		locationLabel_1.setText(lang.get("lbl_From_Location"));
+		locationLabel_1.setBounds(172, 32, 100, 16);
+		desktopPane.add(locationLabel_1);
+
+		final JLabel palletStatusLabel_1 = new JLabel();
+		palletStatusLabel_1.setFont(Common.font_std);
+		palletStatusLabel_1.setText(lang.get("lbl_Despatch_Status"));
+		palletStatusLabel_1.setBounds(170, 240, 105, 20);
+		desktopPane.add(palletStatusLabel_1);
+
+		textFieldDespatchStatus = new JTextField();
+		textFieldDespatchStatus.setEditable(false);
+		textFieldDespatchStatus.setFont(Common.font_std);
+		textFieldDespatchStatus.setDisabledTextColor(Common.color_textdisabled);
+		textFieldDespatchStatus.setBounds(170, 261, 128, 20);
+		desktopPane.add(textFieldDespatchStatus);
+
+		textFieldDespatchLocationTo = new JTextField();
+		textFieldDespatchLocationTo.setEditable(false);
+		textFieldDespatchLocationTo.setFont(Common.font_std);
+		textFieldDespatchLocationTo.setDisabledTextColor(Common.color_textdisabled);
+		textFieldDespatchLocationTo.setBounds(172, 91, 105, 20);
+		desktopPane.add(textFieldDespatchLocationTo);
+
+		final JLabel locationLabel_1_1 = new JLabel();
+		locationLabel_1_1.setFont(Common.font_std);
+		locationLabel_1_1.setText(lang.get("lbl_To_Location"));
+		locationLabel_1_1.setBounds(172, 75, 100, 16);
+		desktopPane.add(locationLabel_1_1);
+
+		final JLabel palletStatusLabel_1_1 = new JLabel();
+		palletStatusLabel_1_1.setFont(Common.font_std);
+		palletStatusLabel_1_1.setText(lang.get("lbl_Despatch_Date"));
+		palletStatusLabel_1_1.setBounds(172, 285, 90, 20);
+		desktopPane.add(palletStatusLabel_1_1);
+
+		final JLabel palletStatusLabel_1_1_1 = new JLabel();
+		palletStatusLabel_1_1_1.setFont(Common.font_std);
+		palletStatusLabel_1_1_1.setText(lang.get("lbl_No_Of_Pallets"));
+		palletStatusLabel_1_1_1.setBounds(172, 332, 120, 20);
+		desktopPane.add(palletStatusLabel_1_1_1);
+
+		textFieldNoOfPallets = new JTextField();
+		textFieldNoOfPallets.setEditable(false);
+		textFieldNoOfPallets.setFont(Common.font_std);
+		textFieldNoOfPallets.setBounds(172, 352, 60, 20);
+		textFieldNoOfPallets.setDisabledTextColor(Common.color_textdisabled);
+		desktopPane.add(textFieldNoOfPallets);
+
+		jTextFieldDespatchDate = new JTextField();
+		jTextFieldDespatchDate.setFont(Common.font_std);
+		jTextFieldDespatchDate.setEditable(false);
+		jTextFieldDespatchDate.setDisabledTextColor(Common.color_textdisabled);
+		jTextFieldDespatchDate.setBounds(172, 303, 125, 20);
+		desktopPane.add(jTextFieldDespatchDate);
+
+		jButtonLookupLocationFrom = new JButton(Common.icon_lookup);
+		jButtonLookupLocationFrom.setEnabled(false);
+		jButtonLookupLocationFrom.setFont(Common.font_btn);
+		jButtonLookupLocationFrom.setBounds(277, 50, 21, 21);
+		jButtonLookupLocationFrom.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				JLaunchLookup.dlgAutoExec = true;
+				JLaunchLookup.dlgCriteriaDefault = "";
+
+				if (JLaunchLookup.locations()) {
+					textFieldDespatchLocationFrom.setText(JLaunchLookup.dlgResult);
+
+					JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+					d.setLocationIDFrom(JLaunchLookup.dlgResult);
+					updateDespatch(d);
+				}
+			}
+		});
+		desktopPane.add(jButtonLookupLocationFrom);
+
+		jButtonLookupLocationTo = new JButton(Common.icon_lookup);
+		jButtonLookupLocationTo.setEnabled(false);
+		jButtonLookupLocationTo.setFont(Common.font_btn);
+		jButtonLookupLocationTo.setBounds(277, 90, 21, 21);
+		jButtonLookupLocationTo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				JLaunchLookup.dlgAutoExec = true;
+				JLaunchLookup.dlgCriteriaDefault = "";
+
+				if (JLaunchLookup.locations()) {
+					textFieldDespatchLocationTo.setText(JLaunchLookup.dlgResult);
+
+					JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+					d.setLocationIDTo(JLaunchLookup.dlgResult);
+					updateDespatch(d);
+				}
+			}
+		});
+		desktopPane.add(jButtonLookupLocationTo);
+
+		jButtonLookupMaterial = new JButton(Common.icon_lookup);
+		jButtonLookupMaterial.setFont(Common.font_btn);
+		jButtonLookupMaterial.setBounds(795, 90, 21, 21);
+		jButtonLookupMaterial.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				JLaunchLookup.dlgAutoExec = false;
+				JLaunchLookup.dlgCriteriaDefault = "";
+
+				if (JLaunchLookup.materials()) {
+					textFieldMaterial.setText(JLaunchLookup.dlgResult);
+				}
+			}
+		});
+		desktopPane.add(jButtonLookupMaterial);
+
+		jButtonLookupBatch = new JButton(Common.icon_lookup);
+		jButtonLookupBatch.setFont(Common.font_btn);
+		jButtonLookupBatch.setBounds(795, 175, 21, 21);
+		jButtonLookupBatch.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				JLaunchLookup.dlgCriteriaDefault = textFieldMaterial.getText();
+				JLaunchLookup.dlgAutoExec = true;
+
+				// JLaunchLookup.
+				if (JLaunchLookup.materialBatches()) {
+					textFieldBatch.setText(JLaunchLookup.dlgResult);
+				}
+			}
+		});
+		desktopPane.add(jButtonLookupBatch);
+
+		confirmedRadioButton.setBackground(Color.WHITE);
+		confirmedRadioButton.setText(lang.get("lbl_Confirmed"));
+		confirmedRadioButton.setBounds(10, 327, 129, 24);
+		confirmedRadioButton.setFont(Common.font_std);
+		confirmedRadioButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				com.commander4j.util.JWait.milliSec(100);
+				populateDespatchList("");
+			}
+		});
+
+		desktopPane.add(confirmedRadioButton);
+
+		unconfirmedRadioButton.setBackground(Color.WHITE);
+		unconfirmedRadioButton.setText(lang.get("lbl_Unconfirmed"));
+		unconfirmedRadioButton.setBounds(10, 352, 129, 24);
+		unconfirmedRadioButton.setSelected(true);
+		unconfirmedRadioButton.setFont(Common.font_std);
+		unconfirmedRadioButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				com.commander4j.util.JWait.milliSec(100);
+				populateDespatchList("");
+				newButton.setEnabled(true);
+			}
+		});
+		desktopPane.add(unconfirmedRadioButton);
+
+		buttonGroup_1.add(unconfirmedRadioButton);
+		buttonGroup_1.add(confirmedRadioButton);
+
+		final JLabel palletStatusLabel_1_2 = new JLabel();
+		palletStatusLabel_1_2.setFont(Common.font_std);
+		palletStatusLabel_1_2.setText(lang.get("lbl_Trailer"));
+		palletStatusLabel_1_2.setBounds(172, 115, 105, 20);
+		desktopPane.add(palletStatusLabel_1_2);
+
+		textFieldTrailer = new JTextField();
+		textFieldTrailer.setFont(Common.font_std);
+		textFieldTrailer.setEditable(false);
+		textFieldTrailer.setDisabledTextColor(Common.color_textdisabled);
+		textFieldTrailer.setBounds(172, 136, 105, 20);
+
+		desktopPane.add(textFieldTrailer);
+
+		final JLabel palletStatusLabel_1_2_1 = new JLabel();
+		palletStatusLabel_1_2_1.setFont(Common.font_std);
+		palletStatusLabel_1_2_1.setText(lang.get("lbl_Haulier"));
+		palletStatusLabel_1_2_1.setBounds(172, 158, 105, 20);
+		desktopPane.add(palletStatusLabel_1_2_1);
+
+		textFieldHaulier = new JTextField();
+		textFieldHaulier.setFont(Common.font_std);
+		textFieldHaulier.setEditable(false);
+		textFieldHaulier.setDisabledTextColor(Common.color_textdisabled);
+		textFieldHaulier.setBounds(172, 176, 105, 20);
+		desktopPane.add(textFieldHaulier);
+
+		jButtonLookupTrailer = new JButton();
+		jButtonLookupTrailer.setEnabled(false);
+		jButtonLookupTrailer.setText("...");
+		jButtonLookupTrailer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String trailer;
+				trailer = JOptionPane.showInputDialog(Common.mainForm, "Enter Trailer Reference");
+
+				if (trailer != null) {
+					JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+					d.setTrailer(trailer.toUpperCase());
+					textFieldTrailer.setText(trailer.toUpperCase());
+					updateDespatch(d);
+				}
+			}
+		});
+		jButtonLookupTrailer.setFont(Common.font_btn);
+		jButtonLookupTrailer.setBounds(277, 135, 21, 21);
+		desktopPane.add(jButtonLookupTrailer);
+
+		jButtonLookupHaulier = new JButton();
+		jButtonLookupHaulier.setEnabled(false);
+		jButtonLookupHaulier.setText("...");
+		jButtonLookupHaulier.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String haulier;
+				haulier = JOptionPane.showInputDialog(Common.mainForm, "Enter Haulier Reference");
+
+				if (haulier != null) {
+					JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+					d.setHaulier(haulier.toUpperCase());
+					textFieldHaulier.setText(haulier.toUpperCase());
+					updateDespatch(d);
+				}
+			}
+		});
+		jButtonLookupHaulier.setFont(Common.font_btn);
+		jButtonLookupHaulier.setBounds(277, 175, 21, 21);
+		desktopPane.add(jButtonLookupHaulier);
+
+		jStatusText = new JLabel("");
+		jStatusText.setBounds(0, 428, 830, 21);
+		jStatusText.setForeground(new java.awt.Color(255, 0, 0));
+		jStatusText.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+		desktopPane.add(jStatusText);
+
+		JLabel lblLoadNo = new JLabel();
+		lblLoadNo.setText(lang.get("lbl_Load_No"));
+		lblLoadNo.setFont(Common.font_std);
+		lblLoadNo.setBounds(172, 196, 105, 20);
+		desktopPane.add(lblLoadNo);
+
+		textFieldLoadNo = new JTextField();
+		textFieldLoadNo.setText("");
+		textFieldLoadNo.setFont(Common.font_std);
+		textFieldLoadNo.setEditable(false);
+		textFieldLoadNo.setDisabledTextColor(Color.BLACK);
+		textFieldLoadNo.setBounds(172, 216, 105, 20);
+		desktopPane.add(textFieldLoadNo);
+
+		jButtonLookupLoadNo = new JButton();
+		jButtonLookupLoadNo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				String load;
+				load = JOptionPane.showInputDialog(Common.mainForm, "Enter Load Number");
+
+				if (load != null) {
+					JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+					d.setLoadNo(load.toUpperCase());
+					textFieldLoadNo.setText(load.toUpperCase());
+					updateDespatch(d);
+
+				}
+
+			}
+		});
+		jButtonLookupLoadNo.setText("...");
+		jButtonLookupLoadNo.setFont(Common.font_btn);
+		jButtonLookupLoadNo.setEnabled(false);
+		jButtonLookupLoadNo.setBounds(277, 215, 21, 21);
+		desktopPane.add(jButtonLookupLoadNo);
+
+		JLabel label = new JLabel();
+		label.setText(lang.get("lbl_User_ID"));
+		label.setFont(Common.font_std);
+		label.setBounds(672, 338, 128, 16);
+		desktopPane.add(label);
+
+		textFieldUserID = new JTextField();
+		textFieldUserID.setText("");
+		textFieldUserID.setFont(new Font("Dialog", Font.PLAIN, 11));
+		textFieldUserID.setEditable(false);
+		textFieldUserID.setDisabledTextColor(Color.BLACK);
+		textFieldUserID.setBounds(672, 356, 122, 20);
+		desktopPane.add(textFieldUserID);
+
+		buttonSetUserID = new JButton((Icon) null);
+		buttonSetUserID.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JLaunchLookup.dlgAutoExec = true;
+				JLaunchLookup.dlgCriteriaDefault = "";
+
+				if (JLaunchLookup.users()) {
+					textFieldUserID.setText(JLaunchLookup.dlgResult);
+
+					JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+					d.updateUserID(d.getDespatchNo(), JLaunchLookup.dlgResult);
+
+				}
+			}
+		});
+		buttonSetUserID.setFont(new Font("Dialog", Font.BOLD, 11));
+		buttonSetUserID.setEnabled(false);
+		buttonSetUserID.setBounds(795, 355, 21, 21);
+		desktopPane.add(buttonSetUserID);
+
+		textFieldDespatchNo = new JTextField();
+		textFieldDespatchNo.setFont(Common.font_std);
+		textFieldDespatchNo.setBounds(672, 215, 143, 21);
+		desktopPane.add(textFieldDespatchNo);
+
+		JLabel despatchNolabel = new JLabel();
+		despatchNolabel.setText(lang.get("lbl_Despatch_No"));
+		despatchNolabel.setFont(Common.font_std);
+		despatchNolabel.setBounds(672, 200, 143, 16);
+		desktopPane.add(despatchNolabel);
+
+		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+		Rectangle window = getBounds();
+		setLocation((screen.width - window.width) / 2, (screen.height - window.height) / 2);
+
+		populateDespatchList("");
+	}
+
+	public DefaultComboBoxModel addListtoModel(LinkedList<String> list) {
+		DefaultComboBoxModel model = new DefaultComboBoxModel();
+		model.removeAllElements();
+
+		int s = list.size();
+
+		for (int j = 0; j < s; j++) {
+			model.addElement(list.get(j));
+		}
+
+		return model;
+	}
+
+	public void addtoList(LinkedList<String> List, String newValue) {
+		List.add(newValue);
+		Collections.sort(List);
+	}
+
+	private void blankDespatchFields() {
+		textFieldDespatchLocationFrom.setText("");
+		textFieldDespatchLocationTo.setText("");
+		textFieldDespatchStatus.setText("");
+		jTextFieldDespatchDate.setText("");
+		textFieldNoOfPallets.setText("");
+		textFieldHaulier.setText("");
+		textFieldTrailer.setText("");
+		textFieldUserID.setText("");
+		jStatusText.setText("");
+	}
+
+	private PreparedStatement buildUnassignedSQL() {
+		JDBQuery q = new JDBQuery(Common.selectedHostID, Common.sessionID);
+		String temp = "";
+		q.clear();
+
+		temp = Common.hostList.getHost(Common.selectedHostID).getSqlstatements().getSQL("JDBPallet.select");
+
+		if (jCheckBoxLimit.isSelected()) {
+			if (Common.hostList.getHost(Common.selectedHostID).getDatabaseParameters().getjdbcDatabaseSelectLimit().equals("top")) {
+				temp = temp.replace("[top]", "top " + spinnerUnassignedLimit.getValue().toString());
+			}
+		}
+
+		q.addText(temp);
+
+		if (list_despatch.getModel().getSize() > 0) {
+			if (list_despatch.getSelectedIndex() >= 0) {
+				JDBDespatch d = (JDBDespatch) list_despatch.getSelectedValue();
+
+				if (Common.hostList.getHost(Common.selectedHostID).getDatabaseParameters().getjdbcDriver().equals("com.microsoft.sqlserver.jdbc.SQLServerDriver")) {
+					q.addParamtoSQL("despatch_no <> ", d.getDespatchNo());
+
+				}
+
+				if (Common.hostList.getHost(Common.selectedHostID).getDatabaseParameters().getjdbcDriver().equals("com.mysql.jdbc.Driver")) {
+					q.addParamtoSQL("despatch_no <> ", d.getDespatchNo());
+
+				}
+
+				if (Common.hostList.getHost(Common.selectedHostID).getDatabaseParameters().getjdbcDriver().equals("oracle.jdbc.driver.OracleDriver")) {
+					q.addParamtoSQL("despatch_no <> ", d.getDespatchNo());
+
+				}
+			}
+		}
+
+		if (textFieldDespatchNo.getText().equals("") == false) {
+			q.addParamtoSQL("despatch_No = ", textFieldDespatchNo.getText());
+		}
+
+		if (textFieldDespatchLocationFrom.getText().equals("") == false) {
+			q.addParamtoSQL("location_id = ", textFieldDespatchLocationFrom.getText());
+		}
+
+		if (textFieldSSCC.getText().equals("") == false) {
+			q.addParamtoSQL("sscc like ", textFieldSSCC.getText());
+		}
+
+		if (textFieldMaterial.getText().equals("") == false) {
+			q.addParamtoSQL("material like ", textFieldMaterial.getText());
+		}
+
+		if (textFieldBatch.getText().equals("") == false) {
+			q.addParamtoSQL("batch_number like ", textFieldBatch.getText());
+		}
+
+		q.addParamtoSQL("Confirmed = ", "Y");
+
+		q.addParamtoSQL("status=", ((String) comboBoxPalletStatus.getSelectedItem()).toString());
+
+		/*
+		 * Check for Oracle rownum and insert literal string here
+		 */
+		if (jCheckBoxLimit.isSelected()) {
+			if (Common.hostList.getHost(Common.selectedHostID).getDatabaseParameters().getjdbcDatabaseSelectLimit().equals("rownum")) {
+				// Oracle
+				q.addParamtoSQL("rownum<=", spinnerUnassignedLimit.getValue().toString());
+				q.addText(" order by sscc");
+			}
+			if (Common.hostList.getHost(Common.selectedHostID).getDatabaseParameters().getjdbcDatabaseSelectLimit().equals("limit")) {
+				// MySQL
+				q.addText(" order by sscc");
+				q.addText(" limit " + spinnerUnassignedLimit.getValue().toString());
+			}
+			if (Common.hostList.getHost(Common.selectedHostID).getDatabaseParameters().getjdbcDatabaseSelectLimit().equals("top")) {
+				// MS SQL
+				q.addText(" order by sscc");
+			}
+		}
+		else {
+			// Default - No Limit
+			q.addText(" order by sscc");
+		}
+
+		/*
+		 * Check for Non mysql limit and insert literal string here
+		 */
+		q.bindParams();
+
+		return q.getPreparedStatement();
+	}
+
+	private void clearUnAssignedList() {
+		DefaultComboBoxModel DefComboBoxMod = new DefaultComboBoxModel();
+
+		ListModel jList1Model = DefComboBoxMod;
+
+		list_unassigned.setModel(jList1Model);
+
+		list_unassigned.setCellRenderer(Common.renderer_list);
+		unassignedList.clear();
+	}
+
+	private void populateAssignedList(String despatchno, String defaultitem) {
+		int counter = 0;
+
+		DefaultComboBoxModel DefComboBoxMod = new DefaultComboBoxModel();
+
+		JDBDespatch temp = new JDBDespatch(Common.selectedHostID, Common.sessionID);
+		assignedList.clear();
+		assignedList.addAll(temp.getAssignedSSCCs(despatchno));
+
+		int sel = -1;
+
+		if (despatchno.isEmpty() == false) {
+			for (int j = 0; j < assignedList.size(); j++) {
+				DefComboBoxMod.addElement(assignedList.get(j));
+				counter++;
+
+				if (assignedList.get(j).toString().equals(defaultitem)) {
+					sel = j;
+				}
+			}
+		}
+
+		ListModel jList1Model = DefComboBoxMod;
+
+		list_assigned.setModel(jList1Model);
+
+		list_assigned.setCellRenderer(Common.renderer_list);
+		list_assigned.setSelectedIndex(sel);
+		list_assigned.ensureIndexIsVisible(sel);
+		textFieldNoOfPallets.setText(String.valueOf(counter));
+		jStatusText.setText("");
+	}
+
+	private void populateDespatchList(String defaultitem) {
+		String status = "";
+		blankDespatchFields();
+
+		DefaultComboBoxModel DefComboBoxMod = new DefaultComboBoxModel();
+
+		if (confirmedRadioButton.isSelected()) {
+			status = "Confirmed";
+		}
+		else {
+			status = "Unconfirmed";
+		}
+
+		despList.clear();
+		despList.addAll(despatch.browseDespatchData(status, Integer.valueOf(spinnerDespatchLimit.getModel().getValue().toString())));
+
+		int sel = despList.size() - 1;
+
+		for (int j = 0; j < despList.size(); j++) {
+			DefComboBoxMod.addElement(despList.get(j));
+
+			if (despList.get(j).toString().equals(defaultitem)) {
+				sel = j;
+			}
+		}
+
+		ListModel jList1Model = DefComboBoxMod;
+
+		list_despatch.setModel(jList1Model);
+
+		list_despatch.setCellRenderer(Common.renderer_list);
+		list_despatch.setSelectedIndex(sel);
+		list_despatch.ensureIndexIsVisible(sel);
+	}
+
+	private void populateUnassignedList(PreparedStatement criteria, String defaultitem) {
+		JDBPallet pallet = new JDBPallet(Common.selectedHostID, Common.sessionID);
+
+		DefaultComboBoxModel DefComboBoxMod = new DefaultComboBoxModel();
+
+		unassignedList.clear();
+
+		unassignedList.addAll(pallet.getPalletList(criteria));
+
+		@SuppressWarnings("unused")
+		int sel = unassignedList.size() - 1;
+
+		for (int j = 0; j < unassignedList.size(); j++) {
+			DefComboBoxMod.addElement(unassignedList.get(j));
+
+			if (unassignedList.get(j).toString().equals(defaultitem)) {
+				sel = j;
+			}
+		}
+
+		ListModel jList1Model = DefComboBoxMod;
+
+		list_unassigned.setModel(jList1Model);
+
+		list_unassigned.setCellRenderer(Common.renderer_list);
+		// list_unassigned.setSelectedIndex(sel);
+		// list_unassigned.ensureIndexIsVisible(sel);
+	}
+
+	public void removefromList(LinkedList<String> List, String oldValue) {
+		List.remove(List.indexOf(oldValue));
+		Collections.sort(List);
+	}
+
+	public void setConfirmButtonStatus() {
+		confirmButton.setEnabled(false);
+
+		if ((textFieldDespatchLocationTo.getText().equals("") == false) | (textFieldDespatchLocationFrom.getText().equals("") == false)) {
+			if (unconfirmedRadioButton.isSelected() == true) {
+				if (list_despatch.getModel().getSize() > 0) {
+					if (list_despatch.getSelectedIndex() >= 0) {
+						confirmButton.setEnabled(true);
+					}
+				}
+			}
+		}
+	}
+
+	public void setFindButtonStatus(String fromlocation) {
+		if (JUtility.isNullORBlank(fromlocation) == true) {
+			findButton.setEnabled(false);
+		}
+		else {
+			findButton.setEnabled(true);
+		}
+	}
+
+	/**
+	 * Launch the application
+	 * 
+	 * @param args
+	 */
+	public boolean updateDespatch(JDBDespatch d) {
+		boolean result = true;
+
+		if (d.update() == false) {
+			JUtility.errorBeep();
+			JOptionPane.showMessageDialog(Common.mainForm, d.getErrorMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			result = false;
+		}
+
+		setConfirmButtonStatus();
+		setFindButtonStatus(d.getLocationIDFrom());
+
+		return result;
+	}
+}

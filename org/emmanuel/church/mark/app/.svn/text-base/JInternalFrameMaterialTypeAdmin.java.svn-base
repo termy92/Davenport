@@ -1,0 +1,409 @@
+package com.commander4j.app;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.Vector;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
+import javax.swing.JList;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.ListModel;
+import com.commander4j.db.JDBLanguage;
+import com.commander4j.db.JDBMaterialType;
+import com.commander4j.sys.Common;
+import com.commander4j.sys.JLaunchMenu;
+import com.commander4j.sys.JLaunchReport;
+import com.commander4j.util.JHelp;
+import com.commander4j.util.JUtility;
+import javax.swing.ListSelectionModel;
+import java.awt.Color;
+
+public class JInternalFrameMaterialTypeAdmin extends JInternalFrame
+{
+	private static final long serialVersionUID = 1;
+	private JDesktopPane jDesktopPane1;
+	private JButton jButtonDelete;
+	private JButton jButtonEdit;
+	private JButton jButtonRename;
+	private JButton jButtonClose;
+	private JList jListMaterialTypes;
+	private JScrollPane jScrollPane1;
+	private JButton jButtonRefresh;
+	private JButton jButtonHelp;
+	private JButton jButtonPrint;
+	private JButton jButtonAdd;
+	private String lmattype;
+	private JDBLanguage lang = new JDBLanguage(Common.selectedHostID, Common.sessionID);
+
+	private void delete() {
+		if (jListMaterialTypes.isSelectionEmpty() == false)
+		{
+			lmattype = ((JDBMaterialType) jListMaterialTypes.getSelectedValue()).getType();
+			int question = JOptionPane.showConfirmDialog(Common.mainForm, lang.get("dlg_Material_Type_Delete") + " " + lmattype + " ?", lang.get("dlg_Confirm"), JOptionPane.YES_NO_OPTION);
+			if (question == 0)
+			{
+				JDBMaterialType u = new JDBMaterialType(Common.selectedHostID, Common.sessionID);
+				u.setType(lmattype);
+				u.delete();
+				populateList("");
+			}
+		}
+	}
+
+	private void rename() {
+		if (jListMaterialTypes.isSelectionEmpty() == false)
+		{
+			String ltype_from = ((JDBMaterialType) jListMaterialTypes.getSelectedValue()).getType();
+			String ltype_to = new String();
+			ltype_to = JOptionPane.showInputDialog(Common.mainForm, lang.get("dlg_Material_Type_Rename"));
+			if (ltype_to != null)
+			{
+				if (ltype_to.equals("") == false)
+				{
+					ltype_to = ltype_to.toUpperCase();
+					JDBMaterialType u = new JDBMaterialType(Common.selectedHostID, Common.sessionID);
+					u.setType(ltype_from);
+					if (u.renameTo(ltype_to) == false)
+					{
+						JUtility.errorBeep();
+						JOptionPane.showMessageDialog(Common.mainForm, u.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);
+					}
+					populateList(ltype_to);
+				}
+			}
+		}
+	}
+
+	private void add() {
+		JDBMaterialType u = new JDBMaterialType(Common.selectedHostID, Common.sessionID);
+		lmattype = JOptionPane.showInputDialog(Common.mainForm, lang.get("dlg_Material_Type_Add"));
+		if (lmattype != null)
+		{
+			if (lmattype.equals("") == false)
+			{
+				lmattype = lmattype.toUpperCase();
+				if (u.create(lmattype, "") == false)
+				{
+					JUtility.errorBeep();
+					JOptionPane.showMessageDialog(Common.mainForm, u.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);
+				}
+				else
+				{
+					// Common.userList.getUser(Common.sessionID)Edit = luser_id;
+					JLaunchMenu.runForm("FRM_ADMIN_MATERIAL_TYPE_EDIT", lmattype);
+				}
+				populateList(lmattype);
+			}
+		}
+	}
+
+	private void print() {
+		JLaunchReport.runReport("RPT_TYPES",null,"",null,"");
+	}
+
+	/**
+	 * Auto-generated main method to display this JInternalFrame inside a new
+	 * JFrame.
+	 */
+	private void populateList(String defaultitem) {
+
+		DefaultComboBoxModel DefComboBoxMod = new DefaultComboBoxModel();
+
+		JDBMaterialType tempType = new JDBMaterialType(Common.selectedHostID, Common.sessionID);
+		Vector<JDBMaterialType> tempTypeList = tempType.getMaterialTypes();
+		int sel = -1;
+		for (int j = 0; j < tempTypeList.size(); j++)
+		{
+			JDBMaterialType t = (JDBMaterialType) tempTypeList.get(j);
+			DefComboBoxMod.addElement(t);
+			if (t.getType().equals(defaultitem))
+			{
+				sel = j;
+			}
+		}
+
+		ListModel jList1Model = DefComboBoxMod;
+		jListMaterialTypes.setModel(jList1Model);
+		jListMaterialTypes.setSelectedIndex(sel);
+		jListMaterialTypes.setCellRenderer(Common.renderer_list);
+		jListMaterialTypes.ensureIndexIsVisible(sel);
+	}
+
+	public JInternalFrameMaterialTypeAdmin()
+	{
+		super();
+		initGUI();
+		final JHelp help = new JHelp();
+		help.enableHelpOnButton(jButtonHelp, JUtility.getHelpSetIDforModule("FRM_ADMIN_MATERIAL_TYPE"));
+		populateList("");
+	}
+
+	private void editRecord() {
+		if (jListMaterialTypes.isSelectionEmpty() == false)
+		{
+			lmattype = ((JDBMaterialType) jListMaterialTypes.getSelectedValue()).getType();
+			JLaunchMenu.runForm("FRM_ADMIN_MATERIAL_TYPE_EDIT", lmattype);
+		}
+	}
+
+	private void initGUI() {
+		try
+		{
+			this.setPreferredSize(new java.awt.Dimension(375, 402));
+			this.setBounds(0, 0, 392+Common.LFAdjustWidth, 415+Common.LFAdjustHeight);
+			setVisible(true);
+			this.setClosable(true);
+			this.setIconifiable(true);
+			this.setTitle("Material Type Admin");
+			{
+				jDesktopPane1 = new JDesktopPane();
+				jDesktopPane1.setBackground(Color.WHITE);
+				getContentPane().add(jDesktopPane1, BorderLayout.CENTER);
+				{
+					jButtonAdd = new JButton(Common.icon_add);
+					jDesktopPane1.add(jButtonAdd);
+					jButtonAdd.setText(lang.get("btn_Add"));
+					jButtonAdd.setMnemonic(lang.getMnemonicChar());
+					jButtonAdd.setFont(Common.font_btn);
+					jButtonAdd.setBounds(231, 7, 126, 28);
+					jButtonAdd.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_ADD"));
+					jButtonAdd.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							add();
+
+						}
+					});
+				}
+				{
+					jButtonDelete = new JButton(Common.icon_delete);
+					jDesktopPane1.add(jButtonDelete);
+					jButtonDelete.setText(lang.get("btn_Delete"));
+					jButtonDelete.setMnemonic(lang.getMnemonicChar());
+					jButtonDelete.setFont(Common.font_btn);
+					jButtonDelete.setBounds(231, 36, 126, 28);
+					jButtonDelete.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_DELETE"));
+					jButtonDelete.setFocusTraversalKeysEnabled(false);
+					jButtonDelete.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							delete();
+
+						}
+					});
+				}
+				{
+					jButtonEdit = new JButton(Common.icon_edit);
+					jDesktopPane1.add(jButtonEdit);
+					jButtonEdit.setText(lang.get("btn_Edit"));
+					jButtonEdit.setMnemonic(lang.getMnemonicChar());
+					jButtonEdit.setFont(Common.font_btn);
+					jButtonEdit.setBounds(231, 65, 126, 28);
+					jButtonEdit.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_EDIT"));
+					jButtonEdit.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							editRecord();
+						}
+					});
+				}
+				{
+					jButtonRename = new JButton(Common.icon_rename);
+					jDesktopPane1.add(jButtonRename);
+					jButtonRename.setText(lang.get("btn_Rename"));
+					jButtonRename.setMnemonic(lang.getMnemonicChar());
+					jButtonRename.setFont(Common.font_btn);
+					jButtonRename.setBounds(231, 94, 126, 28);
+					jButtonRename.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_RENAME"));
+					jButtonRename.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							rename();
+
+						}
+					});
+				}
+				{
+					jButtonPrint = new JButton(Common.icon_report);
+					jDesktopPane1.add(jButtonPrint);
+					jButtonPrint.setText(lang.get("btn_Print"));
+					jButtonPrint.setMnemonic(lang.getMnemonicChar());
+					jButtonPrint.setFont(Common.font_btn);
+					jButtonPrint.setBounds(231, 123, 126, 28);
+					jButtonPrint.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("RPT_TYPES"));
+					jButtonPrint.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							print();
+						}
+					});
+				}
+				{
+					jButtonHelp = new JButton(Common.icon_help);
+					jDesktopPane1.add(jButtonHelp);
+					jButtonHelp.setText(lang.get("btn_Help"));
+					jButtonHelp.setMnemonic(lang.getMnemonicChar());
+					jButtonHelp.setFont(Common.font_btn);
+					jButtonHelp.setBounds(231, 152, 126, 28);
+				}
+				{
+					jButtonRefresh = new JButton(Common.icon_refresh);
+					jDesktopPane1.add(jButtonRefresh);
+					jButtonRefresh.setText(lang.get("btn_Refresh"));
+					jButtonRefresh.setMnemonic(lang.getMnemonicChar());
+					jButtonRefresh.setFont(Common.font_btn);
+					jButtonRefresh.setBounds(231, 181, 126, 28);
+					jButtonRefresh.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							populateList("");
+						}
+					});
+				}
+				{
+					jButtonClose = new JButton(Common.icon_close);
+					jDesktopPane1.add(jButtonClose);
+					jButtonClose.setText(lang.get("btn_Close"));
+					jButtonClose.setMnemonic(lang.getMnemonicChar());
+					jButtonClose.setFont(Common.font_btn);
+					jButtonClose.setBounds(231, 210, 126, 28);
+					jButtonClose.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							dispose();
+						}
+					});
+				}
+				{
+					jScrollPane1 = new JScrollPane();
+					jDesktopPane1.add(jScrollPane1);
+					jScrollPane1.setBounds(7, 7, 217, 357);
+					{
+						ListModel jList1Model = new DefaultComboBoxModel(new String[] { "Item One", "Item Two" });
+						jListMaterialTypes = new JList();
+						jListMaterialTypes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+						jScrollPane1.setViewportView(jListMaterialTypes);
+						jListMaterialTypes.addMouseListener(new MouseAdapter() {
+							public void mouseClicked(MouseEvent evt) {
+								if (evt.getClickCount() == 2)
+								{
+									if (Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_EDIT") == true)
+									{
+										editRecord();
+									}
+								}
+							}
+						});
+						jListMaterialTypes.setModel(jList1Model);
+					}
+
+					{
+						final JPopupMenu popupMenu = new JPopupMenu();
+						addPopup(jListMaterialTypes, popupMenu);
+
+						{
+							final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_add);
+							newItemMenuItem.addActionListener(new ActionListener() {
+								public void actionPerformed(final ActionEvent e) {
+									add();
+								}
+							});
+							newItemMenuItem.setText(lang.get("btn_Add"));
+							newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_ADD"));
+							popupMenu.add(newItemMenuItem);
+						}
+
+						{
+							final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_delete);
+							newItemMenuItem.addActionListener(new ActionListener() {
+								public void actionPerformed(final ActionEvent e) {
+									delete();
+								}
+							});
+							newItemMenuItem.setText(lang.get("btn_Delete"));
+							newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_DELETE"));
+							popupMenu.add(newItemMenuItem);
+						}
+
+						{
+							final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_edit);
+							newItemMenuItem.addActionListener(new ActionListener() {
+								public void actionPerformed(final ActionEvent e) {
+									editRecord();
+								}
+							});
+							newItemMenuItem.setText(lang.get("btn_Edit"));
+							newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_EDIT"));
+							popupMenu.add(newItemMenuItem);
+						}
+
+						{
+							final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_rename);
+							newItemMenuItem.addActionListener(new ActionListener() {
+								public void actionPerformed(final ActionEvent e) {
+									rename();
+								}
+							});
+							newItemMenuItem.setText(lang.get("btn_Rename"));
+							newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_MATERIAL_TYPE_RENAME"));
+							popupMenu.add(newItemMenuItem);
+						}
+
+						{
+							final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_print);
+							newItemMenuItem.addActionListener(new ActionListener() {
+								public void actionPerformed(final ActionEvent e) {
+									print();
+								}
+							});
+							newItemMenuItem.setText(lang.get("btn_Print"));
+							newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("RPT_TYPES"));
+							popupMenu.add(newItemMenuItem);
+						}
+
+						{
+							final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_refresh);
+							newItemMenuItem.addActionListener(new ActionListener() {
+								public void actionPerformed(final ActionEvent e) {
+									populateList("");
+								}
+							});
+							newItemMenuItem.setText(lang.get("btn_Refresh"));
+							popupMenu.add(newItemMenuItem);
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * WindowBuilder generated method.<br>
+	 * Please don't remove this method or its invocations.<br>
+	 * It used by WindowBuilder to associate the {@link javax.swing.JPopupMenu}
+	 * with parent.
+	 */
+	private static void addPopup(Component component, final JPopupMenu popup) {
+		component.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				if (e.isPopupTrigger())
+					showMenu(e);
+			}
+
+			public void mouseReleased(MouseEvent e) {
+				if (e.isPopupTrigger())
+					showMenu(e);
+			}
+
+			private void showMenu(MouseEvent e) {
+				popup.show(e.getComponent(), e.getX(), e.getY());
+			}
+		});
+	}
+}

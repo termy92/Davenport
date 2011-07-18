@@ -1,0 +1,439 @@
+package com.commander4j.app;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.LinkedList;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JDesktopPane;
+import javax.swing.JList;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.ListModel;
+
+import com.commander4j.db.JDBLanguage;
+import com.commander4j.db.JDBCustomer;
+import com.commander4j.sys.Common;
+import com.commander4j.sys.JLaunchMenu;
+import com.commander4j.sys.JLaunchReport;
+import com.commander4j.util.JExcel;
+import com.commander4j.util.JHelp;
+import com.commander4j.util.JUtility;
+import java.awt.Color;
+
+public class JInternalFrameCustomerAdmin extends javax.swing.JInternalFrame
+{
+	private JButton jButtonExcel;
+	private static final long serialVersionUID = 1;
+	private JDesktopPane jDesktopPane1;
+	private JList jListCustomers;
+	private JButton jButtonRename;
+	private JButton jButtonClose;
+	private JButton jButtonRefresh;
+	private JButton jButtonHelp;
+	private JButton jButtonPrint;
+	private JButton jButtonEdit;
+	private JButton jButtonDelete;
+	private JButton jButtonAdd;
+	private JScrollPane jScrollPane1;
+	private String lcustid;
+	private JDBLanguage lang = new JDBLanguage(Common.selectedHostID, Common.sessionID);
+
+	private void addrecord() {
+		JDBCustomer u = new JDBCustomer(Common.selectedHostID, Common.sessionID);
+		lcustid = JOptionPane.showInputDialog(Common.mainForm, lang.get("dlg_Customer_Add"));
+		if (lcustid != null)
+		{
+			if (lcustid.equals("") == false)
+			{
+				lcustid = lcustid.toUpperCase();
+				if (u.create(lcustid, "", "Y") == false)
+				{
+					JUtility.errorBeep();
+					JOptionPane.showMessageDialog(Common.mainForm, u.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);
+				}
+				else
+				{
+					JLaunchMenu.runForm("FRM_ADMIN_CUSTOMER_EDIT", lcustid);
+				}
+				populateList(lcustid);
+			}
+		}
+	}
+
+	private void populateList(String defaultitem) {
+
+		DefaultComboBoxModel DefComboBoxMod = new DefaultComboBoxModel();
+
+		JDBCustomer tempCust = new JDBCustomer(Common.selectedHostID, Common.sessionID);
+
+		LinkedList<JDBCustomer> tempCustomerList = tempCust.getCustomers();
+		int sel = -1;
+		for (int j = 0; j < tempCustomerList.size(); j++)
+		{
+			JDBCustomer t = (JDBCustomer) tempCustomerList.get(j);
+			DefComboBoxMod.addElement(t);
+			if (t.getID().equals(defaultitem))
+			{
+				sel = j;
+			}
+		}
+
+		ListModel jList1Model = DefComboBoxMod;
+		jListCustomers.setModel(jList1Model);
+		jListCustomers.setSelectedIndex(sel);
+		jListCustomers.setCellRenderer(Common.renderer_list);
+		jListCustomers.ensureIndexIsVisible(sel);
+	}
+
+	private void editRecord() {
+		if (jListCustomers.isSelectionEmpty() == false)
+		{
+			lcustid = ((JDBCustomer) jListCustomers.getSelectedValue()).getID();
+			JLaunchMenu.runForm("FRM_ADMIN_CUSTOMER_EDIT", lcustid);
+		}
+	}
+
+	private void delete() {
+		if (jListCustomers.isSelectionEmpty() == false)
+		{
+			lcustid = ((JDBCustomer) jListCustomers.getSelectedValue()).getID();
+			int question = JOptionPane.showConfirmDialog(Common.mainForm, lang.get("dlg_Customer_Delete") + " " + lcustid + " ?", lang.get("dlg_Confirm"), JOptionPane.YES_NO_OPTION);
+			if (question == 0)
+			{
+				JDBCustomer u = new JDBCustomer(Common.selectedHostID, Common.sessionID);
+				u.setID(lcustid);
+				u.delete();
+				populateList("");
+			}
+		}
+	}
+
+	private void print() {
+		JLaunchReport.runReport("RPT_CUSTOMER",null,"",null,"");
+	}
+
+	private void rename() {
+		if (jListCustomers.isSelectionEmpty() == false)
+		{
+			String lcust_from = ((JDBCustomer) jListCustomers.getSelectedValue()).getID();
+			String lcust_to = new String();
+			lcust_to = JOptionPane.showInputDialog(Common.mainForm, lang.get("dlg_Customer_Rename"));
+			if (lcust_to != null)
+			{
+				if (lcust_to.equals("") == false)
+				{
+					lcust_to = lcust_to.toUpperCase();
+					JDBCustomer u = new JDBCustomer(Common.selectedHostID, Common.sessionID);
+					u.setID(lcust_from);
+					if (u.renameTo(lcust_to) == false)
+					{
+						JUtility.errorBeep();
+						JOptionPane.showMessageDialog(Common.mainForm, u.getErrorMessage(), lang.get("dlg_Error"), JOptionPane.ERROR_MESSAGE);
+					}
+					populateList(lcust_to);
+				}
+			}
+		}
+	}
+
+	private void excel() {
+		JDBCustomer customer = new JDBCustomer(Common.selectedHostID, Common.sessionID);
+		JExcel export = new JExcel();
+		export.saveAs("customers.xls", customer.getCustomerDataResultSet(), Common.mainForm);
+	}
+
+	public JInternalFrameCustomerAdmin()
+	{
+		super();
+		initGUI();
+		final JHelp help = new JHelp();
+		help.enableHelpOnButton(jButtonHelp, JUtility.getHelpSetIDforModule("FRM_ADMIN_CUSTOMER"));
+		populateList("");
+	}
+
+	private void initGUI() {
+		try
+		{
+			this.setPreferredSize(new java.awt.Dimension(455, 518));
+			this.setBounds(0, 0, 556+Common.LFAdjustWidth, 541+Common.LFAdjustHeight);
+			setVisible(true);
+			this.setClosable(true);
+			this.setIconifiable(true);
+			this.setTitle("Customer Admin");
+			{
+				jDesktopPane1 = new JDesktopPane();
+				jDesktopPane1.setBackground(Color.WHITE);
+				this.getContentPane().add(jDesktopPane1, BorderLayout.CENTER);
+				jDesktopPane1.setLayout(null);
+				{
+					jScrollPane1 = new JScrollPane();
+					jDesktopPane1.add(jScrollPane1);
+					jScrollPane1.setBounds(10, 10, 376, 476);
+					{
+						ListModel jList1Model = new DefaultComboBoxModel(new String[] { "Item One", "Item Two" });
+						jListCustomers = new JList();
+						jListCustomers.setFont(Common.font_list);
+						jScrollPane1.setViewportView(jListCustomers);
+						jListCustomers.addMouseListener(new MouseAdapter() {
+							public void mouseClicked(MouseEvent evt) {
+								if (evt.getClickCount() == 2)
+								{
+									if (Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_EDIT") == true)
+									{
+										editRecord();
+									}
+								}
+							}
+						});
+						jListCustomers.setModel(jList1Model);
+
+						{
+							final JPopupMenu popupMenu = new JPopupMenu();
+							addPopup(jListCustomers, popupMenu);
+
+							{
+								final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_add);
+								newItemMenuItem.addActionListener(new ActionListener() {
+									public void actionPerformed(final ActionEvent e) {
+										addrecord();
+									}
+								});
+								newItemMenuItem.setText(lang.get("btn_Add"));
+								newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_ADD"));
+								popupMenu.add(newItemMenuItem);
+							}
+
+							{
+								final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_delete);
+								newItemMenuItem.addActionListener(new ActionListener() {
+									public void actionPerformed(final ActionEvent e) {
+										delete();
+									}
+								});
+								newItemMenuItem.setText(lang.get("btn_Delete"));
+								newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_DELETE"));
+								popupMenu.add(newItemMenuItem);
+							}
+
+							{
+								final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_edit);
+								newItemMenuItem.addActionListener(new ActionListener() {
+									public void actionPerformed(final ActionEvent e) {
+										editRecord();
+									}
+								});
+								newItemMenuItem.setText(lang.get("btn_Edit"));
+								newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_EDIT"));
+								popupMenu.add(newItemMenuItem);
+							}
+
+							{
+								final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_rename);
+								newItemMenuItem.addActionListener(new ActionListener() {
+									public void actionPerformed(final ActionEvent e) {
+										rename();
+									}
+								});
+								newItemMenuItem.setText(lang.get("btn_Rename"));
+								newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_RENAME"));
+								popupMenu.add(newItemMenuItem);
+							}
+
+							{
+								final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_print);
+								newItemMenuItem.addActionListener(new ActionListener() {
+									public void actionPerformed(final ActionEvent e) {
+										print();
+									}
+								});
+								newItemMenuItem.setText(lang.get("btn_Print"));
+								newItemMenuItem.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("RPT_CUSTOMERS"));
+								popupMenu.add(newItemMenuItem);
+							}
+
+							{
+								final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_XLS);
+								newItemMenuItem.addActionListener(new ActionListener() {
+									public void actionPerformed(final ActionEvent e) {
+										excel();
+									}
+								});
+								newItemMenuItem.setText(lang.get("btn_Excel"));
+								popupMenu.add(newItemMenuItem);
+							}
+
+							{
+								final JMenuItem newItemMenuItem = new JMenuItem(Common.icon_refresh);
+								newItemMenuItem.addActionListener(new ActionListener() {
+									public void actionPerformed(final ActionEvent e) {
+										populateList("");
+									}
+								});
+								newItemMenuItem.setText(lang.get("btn_Refresh"));
+								popupMenu.add(newItemMenuItem);
+							}
+						}
+					}
+				}
+				{
+					jButtonAdd = new JButton(Common.icon_add);
+					jDesktopPane1.add(jButtonAdd);
+					jButtonAdd.setText(lang.get("btn_Add"));
+					jButtonAdd.setMnemonic(lang.getMnemonicChar());
+					jButtonAdd.setFont(Common.font_btn);
+					jButtonAdd.setBounds(398, 10, 125, 30);
+					jButtonAdd.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_ADD"));
+					jButtonAdd.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							addrecord();
+
+						}
+					});
+				}
+				{
+					jButtonDelete = new JButton(Common.icon_delete);
+					jDesktopPane1.add(jButtonDelete);
+					jButtonDelete.setText(lang.get("btn_Delete"));
+					jButtonDelete.setMnemonic(lang.getMnemonicChar());
+					jButtonDelete.setFont(Common.font_btn);
+					jButtonDelete.setBounds(398, 41, 125, 30);
+					jButtonDelete.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_DELETE"));
+					jButtonDelete.setFocusTraversalKeysEnabled(false);
+					jButtonDelete.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							delete();
+
+						}
+					});
+				}
+				{
+					jButtonEdit = new JButton(Common.icon_edit);
+					jDesktopPane1.add(jButtonEdit);
+					jButtonEdit.setText(lang.get("btn_Edit"));
+					jButtonEdit.setMnemonic(lang.getMnemonicChar());
+					jButtonEdit.setFont(Common.font_btn);
+					jButtonEdit.setBounds(398, 72, 125, 30);
+					jButtonEdit.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_EDIT"));
+					jButtonEdit.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							editRecord();
+						}
+					});
+				}
+				{
+					jButtonRename = new JButton(Common.icon_rename);
+					jDesktopPane1.add(jButtonRename);
+					jButtonRename.setText(lang.get("btn_Rename"));
+					jButtonRename.setMnemonic(lang.getMnemonicChar());
+					jButtonRename.setFont(Common.font_btn);
+					jButtonRename.setBounds(398, 103, 125, 30);
+					jButtonRename.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_ADMIN_CUSTOMER_RENAME"));
+					jButtonRename.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							rename();
+
+						}
+					});
+				}
+				{
+					jButtonPrint = new JButton(Common.icon_print);
+					jDesktopPane1.add(jButtonPrint);
+					jButtonPrint.setText(lang.get("btn_Print"));
+					jButtonPrint.setMnemonic(lang.getMnemonicChar());
+					jButtonPrint.setFont(Common.font_btn);
+					jButtonPrint.setBounds(398, 134, 125, 30);
+					jButtonPrint.setEnabled(true);
+					jButtonPrint.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							print();
+						}
+					});
+				}
+				{
+					jButtonHelp = new JButton(Common.icon_help);
+					jDesktopPane1.add(jButtonHelp);
+					jButtonHelp.setText(lang.get("btn_Help"));
+					jButtonHelp.setMnemonic(lang.getMnemonicChar());
+					jButtonHelp.setFont(Common.font_btn);
+					jButtonHelp.setBounds(398, 227, 125, 30);
+				}
+				{
+					jButtonRefresh = new JButton(Common.icon_refresh);
+					jDesktopPane1.add(jButtonRefresh);
+					jButtonRefresh.setText(lang.get("btn_Refresh"));
+					jButtonRefresh.setMnemonic(lang.getMnemonicChar());
+					jButtonRefresh.setFont(Common.font_btn);
+					jButtonRefresh.setBounds(398, 196, 125, 30);
+					jButtonRefresh.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							populateList("");
+						}
+					});
+				}
+				{
+					jButtonClose = new JButton(Common.icon_close);
+					jDesktopPane1.add(jButtonClose);
+					jButtonClose.setText(lang.get("btn_Close"));
+					jButtonClose.setMnemonic(lang.getMnemonicChar());
+					jButtonClose.setFont(Common.font_btn);
+					jButtonClose.setBounds(398, 258, 125, 30);
+					jButtonClose.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							dispose();
+						}
+					});
+				}
+
+				{
+					jButtonExcel = new JButton(Common.icon_XLS);
+					jButtonExcel.setFont(new Font("Dialog", Font.BOLD, 11));
+					jButtonExcel.setText(lang.get("btn_Excel"));
+					jButtonExcel.setMnemonic(lang.getMnemonicChar());
+					jButtonExcel.setBounds(398, 165, 125, 30);
+					jButtonExcel.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							excel();
+						}
+					});
+					jDesktopPane1.add(jButtonExcel);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * WindowBuilder generated method.<br>
+	 * Please don't remove this method or its invocations.<br>
+	 * It used by WindowBuilder to associate the {@link javax.swing.JPopupMenu}
+	 * with parent.
+	 */
+	private static void addPopup(Component component, final JPopupMenu popup) {
+		component.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				if (e.isPopupTrigger())
+					showMenu(e);
+			}
+
+			public void mouseReleased(MouseEvent e) {
+				if (e.isPopupTrigger())
+					showMenu(e);
+			}
+
+			private void showMenu(MouseEvent e) {
+				popup.show(e.getComponent(), e.getX(), e.getY());
+			}
+		});
+	}
+}

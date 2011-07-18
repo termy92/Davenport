@@ -1,0 +1,283 @@
+package com.commander4j.app;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.PreparedStatement;
+import java.util.LinkedList;
+
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDesktopPane;
+import javax.swing.JLabel;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.ListModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import com.commander4j.db.JDBLanguage;
+import com.commander4j.db.JDBModule;
+import com.commander4j.db.JDBQuery;
+import com.commander4j.sys.Common;
+import com.commander4j.sys.JLaunchReport;
+import com.commander4j.util.JHelp;
+import com.commander4j.util.JPrint;
+import com.commander4j.util.JUtility;
+import javax.swing.SpinnerNumberModel;
+
+public class JInternalFramePalletRePrintLabel extends javax.swing.JInternalFrame
+{
+	private static final long serialVersionUID = 1;
+	private JDesktopPane jDesktopPane1;
+	private JButton jButtonCancel;
+	private JButton jButtonHelp;
+	private JButton jButtonPrint;
+	private JTextField jTextFieldSSCC;
+	private JLabel jLabel1;
+	private String lsscc;
+	private JDBLanguage lang = new JDBLanguage(Common.selectedHostID, Common.sessionID);
+	private JDBModule mod = new JDBModule(Common.selectedHostID, Common.sessionID);
+	private JComboBox comboBoxPrintQueue = new JComboBox();
+	private JSpinner jSpinnerQuantity = new JSpinner();
+	private JCheckBox checkBoxIncHeaderText = new JCheckBox();
+	private JCheckBox jCheckBoxAutoPreview;
+	private JSpinner jSpinnerCopies = new JSpinner();
+	private JLabel label_4;
+
+
+	public JInternalFramePalletRePrintLabel()
+	{
+		super();
+
+		initGUI();
+		final JHelp help = new JHelp();
+		help.enableHelpOnButton(jButtonHelp, JUtility.getHelpSetIDforModule("FRM_PAL_LABEL_COPIES"));
+		
+		JLabel label = new JLabel();
+		label.setHorizontalAlignment(SwingConstants.TRAILING);
+		label.setFont(Common.font_std);
+		label.setText(lang.get("lbl_Label_Header_Text"));
+		label.setBounds(12, 41, 125, 21);
+		jDesktopPane1.add(label);
+		
+		checkBoxIncHeaderText.setText("New JCheckBox");
+		checkBoxIncHeaderText.setSelected(true);
+		checkBoxIncHeaderText.setBackground(Color.WHITE);
+		checkBoxIncHeaderText.setBounds(155, 41, 21, 21);
+		jDesktopPane1.add(checkBoxIncHeaderText);
+		
+		JLabel label_1 = new JLabel();
+		label_1.setBounds(228, 41, 182, 21);
+		label_1.setFont(Common.font_std);
+		label_1.setHorizontalAlignment(SwingConstants.RIGHT);
+		label_1.setText(lang.get("lbl_Number_of_SSCCs"));
+		jDesktopPane1.add(label_1);		
+		
+		JLabel label_2 = new JLabel();
+		label_2.setHorizontalAlignment(SwingConstants.RIGHT);
+		label_2.setFont(Common.font_std);
+		label_2.setBounds(228, 70, 182, 21);
+		label_2.setText(lang.get("lbl_Labels_Per_SSCC"));
+		jDesktopPane1.add(label_2);
+		jSpinnerQuantity.setEnabled(false);
+		
+
+		jSpinnerQuantity.setModel(new SpinnerNumberModel(new Integer(1), null, null, new Integer(1)));
+		jSpinnerQuantity.setFont(Common.font_std);
+		jSpinnerQuantity.setBounds(415, 41, 39, 21);
+		jDesktopPane1.add(jSpinnerQuantity);
+		
+
+		jSpinnerCopies.setModel(new SpinnerNumberModel(new Integer(2), null, null, new Integer(1)));
+		jSpinnerCopies.setFont(Common.font_std);
+		jSpinnerCopies.setBounds(415, 70, 39, 21);
+		jDesktopPane1.add(jSpinnerCopies);
+		
+		JLabel label_3 = new JLabel(lang.get("lbl_Print_Queue"));
+		label_3.setHorizontalAlignment(SwingConstants.TRAILING);
+		label_3.setFont(Common.font_std);
+		label_3.setBounds(12, 103, 125, 21);
+		jDesktopPane1.add(label_3);
+		
+
+		comboBoxPrintQueue.setSelectedIndex(-1);
+		comboBoxPrintQueue.setFont(Common.font_std);
+		comboBoxPrintQueue.setBounds(155, 99, 471, 23);
+		jDesktopPane1.add(comboBoxPrintQueue);
+		
+		jCheckBoxAutoPreview = new JCheckBox();
+		jCheckBoxAutoPreview.setToolTipText("Auto SSCC");
+		jCheckBoxAutoPreview.setText("New JCheckBox");
+		jCheckBoxAutoPreview.setSelected(true);
+		jCheckBoxAutoPreview.setEnabled(false);
+		jCheckBoxAutoPreview.setBackground(Color.WHITE);
+		jCheckBoxAutoPreview.setBounds(155, 70, 21, 21);
+		jCheckBoxAutoPreview.setEnabled(Common.userList.getUser(Common.sessionID).isModuleAllowed("FRM_PRODDEC_PREVIEW"));
+		jDesktopPane1.add(jCheckBoxAutoPreview);
+		
+		label_4 = new JLabel();
+		label_4.setBounds(12, 70, 125, 21);
+		label_4.setHorizontalTextPosition(SwingConstants.CENTER);
+		label_4.setHorizontalAlignment(SwingConstants.TRAILING);
+		label_4.setFont(Common.font_std);
+		label_4.setText(lang.get("lbl_Preview"));
+		jDesktopPane1.add(label_4);		
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				
+				mod.setModuleId("RPT_PALLET_LABEL");
+				mod.getModuleProperties();
+
+				if (mod.getReportType().equals("Label"))
+				{
+					jCheckBoxAutoPreview.setSelected(false);
+					jCheckBoxAutoPreview.setEnabled(false);
+
+				}
+				else
+				{
+					jSpinnerCopies.setEnabled(false);
+				}
+				populatePrinterList(JPrint.getDefaultPrinterQueueName());
+			}
+		});		
+
+	}
+
+	public JInternalFramePalletRePrintLabel(String sscc)
+	{
+		this();
+		lsscc = sscc;
+		jTextFieldSSCC.setText(lsscc);
+		this.setTitle("Pallet Label Reprint");
+	}
+
+	private void populatePrinterList(String defaultitem) {
+		DefaultComboBoxModel defComboBoxMod = new DefaultComboBoxModel();
+
+		LinkedList<String> tempPrinterList = JPrint.getPrinterNames();
+
+		for (int j = 0; j < tempPrinterList.size(); j++)
+		{
+			defComboBoxMod.addElement(tempPrinterList.get(j));
+		}
+
+		int sel = defComboBoxMod.getIndexOf(defaultitem);
+		ListModel jList1Model = defComboBoxMod;
+		comboBoxPrintQueue.setModel((ComboBoxModel) jList1Model);
+		comboBoxPrintQueue.setSelectedIndex(sel);
+
+		if (JPrint.getNumberofPrinters() == 0)
+		{
+			comboBoxPrintQueue.setEnabled(false);
+		}
+		else
+		{
+			comboBoxPrintQueue.setEnabled(true);
+		}
+	}	
+	
+	private PreparedStatement buildSQL1Record(String lsscc) {
+
+		String temp = "";
+
+		JDBQuery query = new JDBQuery(Common.selectedHostID, Common.sessionID);
+		query.clear();
+
+		temp = Common.hostList.getHost(Common.selectedHostID).getSqlstatements().getSQL("JDBPallet.selectWithExpiry");
+
+		temp = temp.replace("[top]", "");
+
+		query.addText(temp);
+
+		if (lsscc.equals("") == false)
+		{
+			query.addParamtoSQL("sscc = ", lsscc);
+		}
+
+		query.bindParams();
+		return query.getPreparedStatement();
+	}	
+
+	private void initGUI() {
+		try
+		{
+			this.setPreferredSize(new java.awt.Dimension(471, 531));
+			this.setBounds(0, 0, 669+Common.LFAdjustWidth, 222+Common.LFAdjustHeight);
+			setVisible(true);
+			this.setIconifiable(true);
+			this.setClosable(true);
+			{
+				jDesktopPane1 = new JDesktopPane();
+				jDesktopPane1.setBackground(Color.WHITE);
+				this.getContentPane().add(jDesktopPane1, BorderLayout.CENTER);
+				jDesktopPane1.setPreferredSize(new java.awt.Dimension(462, 497));
+				jDesktopPane1.setLayout(null);
+				{
+					jTextFieldSSCC = new JTextField();
+					jDesktopPane1.add(jTextFieldSSCC);
+					jTextFieldSSCC.setFont(Common.font_std);
+					jTextFieldSSCC.setEditable(false);
+					jTextFieldSSCC.setEnabled(false);
+					jTextFieldSSCC.setBounds(155, 10, 147, 21);
+					jTextFieldSSCC.setDisabledTextColor(Common.color_textdisabled);
+				}
+				{
+					jButtonPrint = new JButton(Common.icon_print);
+					jButtonPrint.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							String pq = comboBoxPrintQueue.getSelectedItem().toString();
+							JLaunchReport.runReport("RPT_PALLET_LABEL",buildSQL1Record(jTextFieldSSCC.getText()), jCheckBoxAutoPreview.isSelected(), pq, Integer.valueOf(jSpinnerCopies.getValue().toString()),checkBoxIncHeaderText.isSelected());
+						}
+					});
+					jDesktopPane1.add(jButtonPrint);
+					jButtonPrint.setText(lang.get("btn_Print"));
+					jButtonPrint.setMnemonic(lang.getMnemonicChar());
+					jButtonPrint.setFont(Common.font_btn);
+					jButtonPrint.setBounds(181, 136, 111, 28);
+
+				}
+				{
+					jButtonHelp = new JButton(Common.icon_help);
+					jDesktopPane1.add(jButtonHelp);
+					jButtonHelp.setText(lang.get("btn_Help"));
+					jButtonHelp.setMnemonic(lang.getMnemonicChar());
+					jButtonHelp.setFont(Common.font_btn);
+					jButtonHelp.setBounds(294, 136, 111, 28);
+				}
+				{
+					jButtonCancel = new JButton(Common.icon_close);
+					jDesktopPane1.add(jButtonCancel);
+					jButtonCancel.setText(lang.get("btn_Close"));
+					jButtonCancel.setMnemonic(lang.getMnemonicChar());
+					jButtonCancel.setFont(Common.font_btn);
+					jButtonCancel.setBounds(407, 136, 111, 28);
+					jButtonCancel.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							dispose();
+						}
+					});
+				}
+
+				{
+					jLabel1 = new JLabel();
+					jDesktopPane1.add(jLabel1);
+					jLabel1.setText(lang.get("lbl_Pallet_SSCC"));
+					jLabel1.setFont(Common.font_std);
+					jLabel1.setBounds(12, 10, 125, 21);
+					jLabel1.setHorizontalAlignment(SwingConstants.TRAILING);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+}

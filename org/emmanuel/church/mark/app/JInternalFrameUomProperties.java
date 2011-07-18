@@ -1,0 +1,232 @@
+package org.emmanuel.church.mark.app;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JButton;
+import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.text.AbstractDocument;
+
+import org.emmanuel.church.mark.db.JDBLanguage;
+import org.emmanuel.church.mark.db.JDBUom;
+import org.emmanuel.church.mark.sys.Common;
+import org.emmanuel.church.mark.util.JFixedSizeFilter;
+
+public class JInternalFrameUomProperties extends JInternalFrame {
+	private static final long serialVersionUID = 1;
+	private JDesktopPane jDesktopPane1;
+	private JTextField jTextFieldUOM;
+	private JLabel jLabel2;
+	private JButton jButtonClose;
+	private JTextField jTextFieldDescription;
+	private JLabel jLabel3;
+	private JButton jButtonHelp;
+	private JButton jButtonUpdate;
+	private JTextField jTextFieldISO_UOM;
+	private JLabel jLabel1;
+	private final JDBUom uom = new JDBUom(Common.selectedHostID, Common.sessionID);
+	private String luomid;
+	private JTextField jTextFieldLocal_UOM;
+	private JLabel lblLocalUom;
+	private final JDBLanguage lang = new JDBLanguage(Common.selectedHostID, Common.sessionID);
+
+	/**
+	 * Auto-generated main method to display this JInternalFrame inside a new
+	 * JFrame.
+	 */
+
+	public JInternalFrameUomProperties() {
+		super();
+		initGUI();
+		// final JHelp help = new JHelp();
+		// help.enableHelpOnButton(jButtonHelp,
+		// JUtility.getHelpSetIDforModule("FRM_ADMIN_UOM_ADD"));
+
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				jTextFieldISO_UOM.requestFocus();
+				jTextFieldISO_UOM.setCaretPosition(jTextFieldISO_UOM.getText().length());
+			}
+		});
+	}
+
+	public JInternalFrameUomProperties(String uomid) {
+
+		this();
+
+		jTextFieldUOM.setText(uomid);
+		setTitle(getTitle() + " - " + uomid);
+		luomid = uomid;
+
+		uom.setInternalUom(luomid);
+		uom.getInternalUomProperties();
+
+		jTextFieldUOM.setText(uom.getInternalUom());
+		jTextFieldISO_UOM.setText(uom.getIsoUom());
+		jTextFieldLocal_UOM.setText(uom.getLocalUom());
+		jTextFieldDescription.setText(uom.getDescription());
+	}
+
+	private void initGUI() {
+		try {
+			this.setPreferredSize(new java.awt.Dimension(387, 165));
+			this.setBounds(25, 25, 424 + Common.LFAdjustWidth, 232 + Common.LFAdjustHeight);
+			setVisible(true);
+			this.setTitle("UOM Properties");
+			{
+				jDesktopPane1 = new JDesktopPane();
+				jDesktopPane1.setBackground(Color.WHITE);
+				this.getContentPane().add(jDesktopPane1, BorderLayout.CENTER);
+				jDesktopPane1.setLayout(null);
+				{
+					jLabel1 = new JLabel();
+					jDesktopPane1.add(jLabel1);
+					jLabel1.setText(lang.get("lbl_UOM_Internal"));
+					jLabel1.setHorizontalAlignment(SwingConstants.RIGHT);
+					jLabel1.setHorizontalTextPosition(SwingConstants.RIGHT);
+					jLabel1.setFont(Common.font_std);
+					jLabel1.setBounds(0, 10, 149, 21);
+				}
+				{
+					jTextFieldUOM = new JTextField();
+					jDesktopPane1.add(jTextFieldUOM);
+					jTextFieldUOM.setFont(Common.font_std);
+					jTextFieldUOM.setHorizontalAlignment(SwingConstants.LEFT);
+					jTextFieldUOM.setEditable(false);
+					jTextFieldUOM.setPreferredSize(new java.awt.Dimension(100, 20));
+					jTextFieldUOM.setBounds(155, 10, 51, 21);
+					jTextFieldUOM.setEnabled(false);
+					jTextFieldUOM.setDisabledTextColor(Common.color_textdisabled);
+				}
+				{
+					jLabel2 = new JLabel();
+					jDesktopPane1.add(jLabel2);
+					jLabel2.setText(lang.get("lbl_UOM_ISO"));
+					jLabel2.setHorizontalAlignment(SwingConstants.RIGHT);
+					jLabel2.setHorizontalTextPosition(SwingConstants.RIGHT);
+					jLabel2.setFont(Common.font_std);
+					jLabel2.setBounds(0, 43, 149, 21);
+				}
+				{
+					jTextFieldISO_UOM = new JTextField();
+					AbstractDocument doc = (AbstractDocument) jTextFieldISO_UOM.getDocument();
+					doc.setDocumentFilter(new JFixedSizeFilter(JDBUom.field_uom));
+					jDesktopPane1.add(jTextFieldISO_UOM);
+					jTextFieldISO_UOM.setFont(Common.font_std);
+					jTextFieldISO_UOM.setPreferredSize(new java.awt.Dimension(40, 20));
+					jTextFieldISO_UOM.setFocusCycleRoot(true);
+					jTextFieldISO_UOM.setBounds(155, 43, 53, 21);
+					jTextFieldISO_UOM.addKeyListener(new KeyAdapter() {
+						@Override
+						public void keyTyped(KeyEvent evt) {
+							jButtonUpdate.setEnabled(true);
+						}
+					});
+				}
+				{
+					jButtonUpdate = new JButton(Common.icon_update);
+					jDesktopPane1.add(jButtonUpdate);
+					jButtonUpdate.setEnabled(false);
+					jButtonUpdate.setText(lang.get("btn_Save"));
+					jButtonUpdate.setMnemonic(lang.getMnemonicChar());
+					jButtonUpdate.setHorizontalTextPosition(SwingConstants.RIGHT);
+					jButtonUpdate.setFont(Common.font_btn);
+					jButtonUpdate.setBounds(45, 142, 110, 30);
+					jButtonUpdate.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							uom.setIsoUom(jTextFieldISO_UOM.getText().toUpperCase());
+							uom.setDescription(jTextFieldDescription.getText().toUpperCase());
+							uom.setLocalUom(jTextFieldLocal_UOM.getText().toUpperCase());
+							uom.update();
+							jButtonUpdate.setEnabled(false);
+						}
+					});
+				}
+				{
+					jButtonHelp = new JButton(Common.icon_help);
+					jDesktopPane1.add(jButtonHelp);
+					jButtonHelp.setText(lang.get("btn_Help"));
+					jButtonHelp.setMnemonic(lang.getMnemonicChar());
+					jButtonHelp.setFont(Common.font_btn);
+					jButtonHelp.setBounds(157, 142, 110, 30);
+				}
+				{
+					jButtonClose = new JButton(Common.icon_close);
+					jDesktopPane1.add(jButtonClose);
+					jButtonClose.setText(lang.get("btn_Close"));
+					jButtonClose.setMnemonic(lang.getMnemonicChar());
+					jButtonClose.setFont(Common.font_btn);
+					jButtonClose.setBounds(269, 142, 110, 30);
+					jButtonClose.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent evt) {
+							dispose();
+						}
+					});
+				}
+				{
+					jLabel3 = new JLabel();
+					jDesktopPane1.add(jLabel3);
+					jLabel3.setText(lang.get("lbl_Description"));
+					jLabel3.setHorizontalAlignment(SwingConstants.RIGHT);
+					jLabel3.setHorizontalTextPosition(SwingConstants.RIGHT);
+					jLabel3.setFont(Common.font_std);
+					jLabel3.setBounds(0, 109, 149, 21);
+				}
+				{
+					jTextFieldLocal_UOM = new JTextField();
+					jTextFieldLocal_UOM.addKeyListener(new KeyAdapter() {
+						@Override
+						public void keyTyped(KeyEvent e) {
+							jButtonUpdate.setEnabled(true);
+						}
+					});
+					jTextFieldLocal_UOM.setPreferredSize(new Dimension(40, 20));
+					jTextFieldLocal_UOM.setFont(new Font("Dialog", Font.PLAIN, 11));
+					jTextFieldLocal_UOM.setFocusCycleRoot(true);
+					jTextFieldLocal_UOM.setCaretPosition(0);
+					jTextFieldLocal_UOM.setBounds(155, 76, 53, 21);
+					jDesktopPane1.add(jTextFieldLocal_UOM);
+				}
+				{
+					lblLocalUom = new JLabel();
+					lblLocalUom.setText(lang.get("lbl_UOM_Local"));
+					lblLocalUom.setHorizontalTextPosition(SwingConstants.RIGHT);
+					lblLocalUom.setHorizontalAlignment(SwingConstants.RIGHT);
+					lblLocalUom.setFont(new Font("Dialog", Font.PLAIN, 11));
+					lblLocalUom.setBounds(0, 76, 149, 21);
+					jDesktopPane1.add(lblLocalUom);
+				}
+
+				{
+					jTextFieldDescription = new JTextField();
+					AbstractDocument doc = (AbstractDocument) jTextFieldDescription.getDocument();
+					doc.setDocumentFilter(new JFixedSizeFilter(JDBUom.field_description));
+					jDesktopPane1.add(jTextFieldDescription);
+					jTextFieldDescription.setFont(Common.font_std);
+					jTextFieldDescription.setPreferredSize(new java.awt.Dimension(40, 20));
+					jTextFieldDescription.setFocusCycleRoot(true);
+					jTextFieldDescription.setBounds(155, 109, 237, 21);
+					jTextFieldDescription.addKeyListener(new KeyAdapter() {
+						@Override
+						public void keyTyped(KeyEvent evt) {
+							jButtonUpdate.setEnabled(true);
+						}
+					});
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}
