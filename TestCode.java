@@ -16,6 +16,7 @@ import com.peel.util.PeelConstants;
 import com.samsung.sta.peel.db.DBAdapter;
 import com.samsung.sta.peel.utils.Logger;
 
+// add comments...
 public class PeelRemoteActivity extends Activity {
 	Logger logger = Logger.getLogger(PeelRemoteActivity.class);
 
